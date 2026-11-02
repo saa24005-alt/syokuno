@@ -3,572 +3,1073 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>新生活サポートメモ</title>
-    <!-- Tailwind CSS -->
+    <title>3D Room Planner</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: M PLUS Rounded 1c -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body {
-            font-family: 'M PLUS Rounded 1c', sans-serif;
-            background-color: #EFF6FF; /* blue-50 */
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* カスタムスクロールバー（非表示気味にする） */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #BFDBFE;
-            border-radius: 10px;
-        }
-        
-        .btn-primary {
-            @apply w-full py-4 bg-blue-500 text-white rounded-full text-xl font-bold shadow-lg shadow-blue-500/30 transition-transform active:scale-95 flex justify-center items-center gap-2;
-        }
-        
-        .btn-secondary {
-            @apply w-full py-4 bg-white text-blue-600 border-2 border-blue-200 rounded-full text-xl font-bold shadow-sm transition-transform active:scale-95;
-        }
-        
-        .btn-danger {
-            @apply w-full py-4 bg-red-400 text-white rounded-full text-xl font-bold shadow-md shadow-red-400/30 transition-transform active:scale-95;
-        }
-        
-        .input-large {
-            @apply w-full p-4 rounded-2xl border-2 border-blue-100 bg-white text-lg focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all;
-        }
-        
-        .task-card {
-            @apply bg-white p-5 rounded-3xl shadow-sm border border-blue-50 mb-4 transition-all;
-        }
-        
-        /* 完了時のアニメーション用 */
-        .task-done {
-            @apply opacity-60 bg-gray-50;
-        }
-        .task-done .task-text {
-            @apply line-through text-gray-500;
-        }
-        
-        /* モーダル表示時の背景固定 */
-        body.modal-open {
-            overflow: hidden;
-        }
+        body { margin: 0; overflow: hidden; touch-action: none; font-family: 'Inter', sans-serif; }
+        #canvas-container canvas { display: block; outline: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
+</head>
+<body class="bg-gray-100 text-gray-800 h-screen w-screen flex flex-col overflow-hidden">
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- Toast Notification System -->
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-        // 環境変数の取得
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // ダミー設定 (実際の環境では自動で上書きされます)
-            apiKey: "dummy", authDomain: "dummy", projectId: "dummy"
-        };
-
-        // Firebase初期化
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // アプリの状態
-        let currentUser = null;
-        let tasks = [];
-        let unsubscribeTasks = null;
-        let currentEditId = null;
-        let currentDeleteId = null;
-
-        // DOM要素
-        const screens = {
-            loading: document.getElementById('screen-loading'),
-            login: document.getElementById('screen-login'),
-            main: document.getElementById('screen-main')
-        };
-        const taskListEl = document.getElementById('task-list');
-        const emptyStateEl = document.getElementById('empty-state');
-        const loginBtn = document.getElementById('btn-login');
-        const logoutBtn = document.getElementById('btn-logout');
-        
-        // フォーム要素
-        const formTask = document.getElementById('form-task');
-        const inputTask = document.getElementById('input-task');
-        const selectCategory = document.getElementById('select-category');
-        
-        // モーダル要素
-        const editModal = document.getElementById('modal-edit');
-        const deleteModal = document.getElementById('modal-delete');
-        const editInputTask = document.getElementById('edit-input-task');
-        const editSelectCategory = document.getElementById('edit-select-category');
-
-        // カテゴリの絵文字マッピング
-        const categoryIcons = {
-            'shopping': '🛒',
-            'chore': '🧹',
-            'procedure': '📝',
-            'other': '💡'
-        };
-        const categoryNames = {
-            'shopping': 'お買い物',
-            'chore': '家事',
-            'procedure': '手続き',
-            'other': 'その他'
-        };
-
-        // UI切り替え
-        function showScreen(screenName) {
-            Object.values(screens).forEach(el => el.classList.add('hidden'));
-            screens[screenName].classList.remove('hidden');
-        }
-
-        // ログイン処理
-        async function handleLogin() {
-            loginBtn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8 text-center border border-gray-100">
+            <div class="mb-6 flex justify-center">
+                <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            </div>
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">3D Room Planner</h1>
+            <p class="text-gray-500 mb-8 text-sm">部屋の大きさを設定して、家具を自由に配置しましょう。データはクラウドに保存されます。</p>
+            
+            <button id="btn-google-login" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 font-semibold py-3 px-4 rounded-xl shadow-sm hover:bg-gray-50 active:bg-gray-100 transition duration-200 mb-4">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
-                ログイン中...
-            `;
-            loginBtn.disabled = true;
-
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Login Error:", error);
-                loginBtn.innerHTML = `Googleアカウントで始める`;
-                loginBtn.disabled = false;
-                showToast("ログインに失敗しました。再試行してください。");
-            }
-        }
-
-        // ログアウト処理
-        async function handleLogout() {
-            try {
-                if (unsubscribeTasks) unsubscribeTasks();
-                await signOut(auth);
-            } catch (error) {
-                console.error("Logout Error:", error);
-            }
-        }
-
-        // 認証状態の監視
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                // UI更新
-                showScreen('main');
-                loadTasks();
-            } else {
-                currentUser = null;
-                tasks = [];
-                renderTasks();
-                showScreen('login');
-                loginBtn.innerHTML = `はじめる`;
-                loginBtn.disabled = false;
-            }
-        });
-
-        // タスクの読み込み (Firestore)
-        function loadTasks() {
-            if (!currentUser) return;
-
-            // Strict Path Rules に準拠: artifacts/{appId}/users/{userId}/{collection}
-            const tasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks');
+                Googleでログイン
+            </button>
+            <button id="btn-guest-login" class="w-full text-gray-500 font-medium py-2 hover:text-gray-700 transition duration-200">
+                お試しで始める（ゲスト）
+            </button>
             
-            // Complex Queries 禁止のルールに準拠し、全件取得してJSでソートする
-            unsubscribeTasks = onSnapshot(tasksRef, (snapshot) => {
-                tasks = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+            <p class="text-xs text-gray-400 mt-6 text-left">※GitHub Pages等で動かす場合は、コード内のFirebase Configをご自身のものに書き換えてください。</p>
+        </div>
+    </div>
 
-                // JSメモリ内でソート (未完了を上に、作成日時が新しいものを上に)
-                tasks.sort((a, b) => {
-                    if (a.isDone !== b.isDone) return a.isDone ? 1 : -1;
-                    return b.createdAt - a.createdAt;
-                });
-
-                renderTasks();
-            }, (error) => {
-                console.error("Error loading tasks:", error);
-                showToast("データの読み込みに失敗しました。");
-            });
-        }
-
-        // タスクの追加
-        async function addTask(e) {
-            e.preventDefault();
-            if (!currentUser) return;
-
-            const text = inputTask.value.trim();
-            const category = selectCategory.value;
-
-            if (!text) return;
-
-            const submitBtn = formTask.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = "追加中...";
-            submitBtn.disabled = true;
-
-            try {
-                const tasksRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks');
-                await addDoc(tasksRef, {
-                    text: text,
-                    category: category,
-                    isDone: false,
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                });
-                
-                inputTask.value = '';
-                showToast("追加しました！");
-            } catch (error) {
-                console.error("Error adding task:", error);
-                showToast("追加に失敗しました。");
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        // タスクの完了状態トグル
-        async function toggleTaskStatus(id, currentStatus) {
-            if (!currentUser) return;
-            try {
-                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id);
-                await updateDoc(taskRef, {
-                    isDone: !currentStatus,
-                    updatedAt: Date.now()
-                });
-                
-                if (!currentStatus) {
-                    showToast("お疲れ様です！一つクリアしましたね✨");
-                }
-            } catch (error) {
-                console.error("Error toggling task:", error);
-            }
-        }
-
-        // --- 編集モーダル関連 ---
-        window.openEditModal = function(id) {
-            const task = tasks.find(t => t.id === id);
-            if (!task) return;
+    <!-- Main App UI -->
+    <div id="main-app" class="flex-1 flex flex-col md:flex-row hidden w-full h-full">
+        <!-- 3D Canvas Area -->
+        <div id="canvas-container" class="flex-1 relative bg-gray-200 shadow-inner order-1 md:order-2 h-[55vh] md:h-full cursor-pointer">
+            <div class="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
+                <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold shadow-md pointer-events-auto text-gray-700">
+                    <span id="ui-username">...</span>
+                </div>
+                <button id="btn-logout" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-red-100 pointer-events-auto transition">
+                    ログアウト
+                </button>
+            </div>
             
-            currentEditId = id;
-            editInputTask.value = task.text;
-            editSelectCategory.value = task.category;
+            <!-- View Mode Toggle -->
+            <div class="absolute top-16 left-4 z-10 pointer-events-auto">
+                <div class="bg-white rounded-xl shadow-md p-1 flex gap-1 border border-gray-200">
+                    <button id="btn-view-3d" class="px-3 py-1.5 text-sm font-bold rounded-lg bg-blue-100 text-blue-700 transition">3D斜め</button>
+                    <button id="btn-view-2d" class="px-3 py-1.5 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-50 transition">2D真上</button>
+                </div>
+            </div>
+
+            <!-- Labels Container -->
+            <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
+
+            <!-- Instructions Overlay -->
+            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/75 backdrop-blur-sm text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg pointer-events-none whitespace-nowrap">
+                指やマウスで家具をドラッグして移動
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div class="w-full md:w-96 lg:w-[400px] bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl z-20 flex flex-col order-2 md:order-1 h-[45vh] md:h-full">
+            <div class="p-5 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm z-10">
+                <h2 class="text-xl font-extrabold text-gray-800 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    部屋 & 家具の設定
+                </h2>
+            </div>
             
-            editModal.classList.remove('hidden');
-            editModal.classList.add('flex');
-            document.body.classList.add('modal-open');
-        }
+            <div class="flex-1 overflow-y-auto p-5 space-y-6 hide-scrollbar">
+                <!-- Room Size Settings -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-base font-bold text-gray-800 mb-4 flex justify-between items-center">
+                        <span>部屋の形とサイズ</span>
+                        <span id="room-tatami-display" class="bg-blue-100 text-blue-800 text-sm font-extrabold px-3 py-1 rounded-lg">約 -- 畳</span>
+                    </h3>
+                    
+                    <!-- Tabs -->
+                    <div class="flex gap-2 mb-5">
+                        <button id="tab-rect" class="flex-1 text-sm font-bold text-blue-600 border-b-2 border-blue-600 pb-2 transition-all">四角形</button>
+                        <button id="tab-custom" class="flex-1 text-sm font-medium text-gray-400 border-b-2 border-transparent pb-2 hover:text-gray-600 transition-all">自由な形</button>
+                    </div>
 
-        window.closeEditModal = function() {
-            currentEditId = null;
-            editModal.classList.add('hidden');
-            editModal.classList.remove('flex');
-            document.body.classList.remove('modal-open');
-        }
+                    <!-- Rect Panel -->
+                    <div id="panel-rect" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1.5">広さの目安（畳）から選ぶ</label>
+                            <select id="room-preset" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+                                <option value="">（カスタムサイズ）</option>
+                                <option value="4.5">4.5畳 (約2.73m × 2.73m)</option>
+                                <option value="6" selected>6畳 (約2.73m × 3.64m)</option>
+                                <option value="8">8畳 (約3.64m × 3.64m)</option>
+                                <option value="10">10畳 (約3.64m × 4.55m)</option>
+                                <option value="12">12畳 (約3.64m × 5.46m)</option>
+                            </select>
+                        </div>
 
-        async function saveEditTask() {
-            if (!currentUser || !currentEditId) return;
-            
-            const newText = editInputTask.value.trim();
-            const newCategory = editSelectCategory.value;
-            
-            if (!newText) {
-                showToast("内容を入力してください");
-                return;
-            }
-
-            try {
-                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', currentEditId);
-                await updateDoc(taskRef, {
-                    text: newText,
-                    category: newCategory,
-                    updatedAt: Date.now()
-                });
-                closeEditModal();
-                showToast("保存しました");
-            } catch (error) {
-                console.error("Error editing task:", error);
-                showToast("保存に失敗しました");
-            }
-        }
-
-        // --- 削除モーダル関連 ---
-        window.openDeleteModal = function(id) {
-            currentDeleteId = id;
-            deleteModal.classList.remove('hidden');
-            deleteModal.classList.add('flex');
-            document.body.classList.add('modal-open');
-        }
-
-        window.closeDeleteModal = function() {
-            currentDeleteId = null;
-            deleteModal.classList.add('hidden');
-            deleteModal.classList.remove('flex');
-            document.body.classList.remove('modal-open');
-        }
-
-        async function confirmDeleteTask() {
-            if (!currentUser || !currentDeleteId) return;
-            try {
-                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', currentDeleteId);
-                await deleteDoc(taskRef);
-                closeDeleteModal();
-                showToast("削除しました");
-            } catch (error) {
-                console.error("Error deleting task:", error);
-                showToast("削除に失敗しました");
-            }
-        }
-
-        // レンダリング
-        function renderTasks() {
-            taskListEl.innerHTML = '';
-            
-            if (tasks.length === 0) {
-                emptyStateEl.classList.remove('hidden');
-                return;
-            }
-            
-            emptyStateEl.classList.add('hidden');
-
-            tasks.forEach(task => {
-                const el = document.createElement('div');
-                el.className = `task-card ${task.isDone ? 'task-done' : ''}`;
-                
-                const icon = categoryIcons[task.category] || categoryIcons['other'];
-                const categoryName = categoryNames[task.category] || categoryNames['other'];
-
-                el.innerHTML = `
-                    <div class="flex items-start gap-4">
-                        <!-- カスタムチェックボックス (大きく押しやすく) -->
-                        <button onclick="window.toggleTask('${task.id}', ${task.isDone})" 
-                                class="flex-shrink-0 w-12 h-12 rounded-full border-4 ${task.isDone ? 'border-blue-400 bg-blue-400 text-white' : 'border-gray-200 bg-white'} flex items-center justify-center transition-colors shadow-sm">
-                            ${task.isDone ? '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
-                        </button>
-                        
-                        <div class="flex-1 min-w-0 pt-1">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">
-                                    ${icon} ${categoryName}
-                                </span>
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">幅 (X軸・m)</label>
+                                <input type="number" id="room-width" value="2.73" step="0.01" min="1" max="20" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
                             </div>
-                            <h3 class="task-text text-xl font-bold text-gray-800 break-words leading-tight">
-                                ${escapeHtml(task.text)}
-                            </h3>
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行き (Z軸・m)</label>
+                                <input type="number" id="room-depth" value="3.64" step="0.01" min="1" max="20" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Custom Shape Panel -->
+                    <div id="panel-custom" class="hidden space-y-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1.5">頂点座標 (m) - 一筆書きの順で</label>
+                        <div id="vertex-container" class="space-y-2.5 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-xl border border-gray-200">
+                            <!-- 頂点入力が動的に入る -->
+                        </div>
+                        <div class="flex gap-3">
+                            <button id="btn-preset-l" class="flex-1 bg-white border border-gray-300 text-gray-700 rounded-xl py-2.5 text-sm font-bold hover:bg-gray-50 shadow-sm transition">L字型に設定</button>
+                            <button id="btn-add-vertex" class="flex-1 bg-white border border-gray-300 text-gray-700 rounded-xl py-2.5 text-sm font-bold hover:bg-gray-50 shadow-sm transition">+ 頂点追加</button>
+                        </div>
+                    </div>
+
+                    <button id="btn-update-room" class="mt-5 w-full bg-gray-800 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:bg-gray-700 transition">
+                        部屋の形を更新
+                    </button>
+                </div>
+
+                <!-- Add Furniture -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-base font-bold text-gray-800 mb-4 border-b border-gray-100 pb-3">家具を追加</h3>
                     
-                    <div class="mt-4 flex justify-end gap-3 border-t border-gray-100 pt-3">
-                        <button onclick="window.openEditModal('${task.id}')" class="px-5 py-2 bg-blue-50 text-blue-600 rounded-full font-bold text-sm active:bg-blue-100">
-                            編集
+                    <!-- Quick Add Preset Buttons -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium text-gray-600 mb-2">よく使う家具（ワンタップ追加）</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2.5 rounded-xl text-sm font-bold border border-indigo-200 transition shadow-sm" data-name="ベッド" data-w="1.0" data-h="0.5" data-d="2.0" data-color="#4F46E5">🛏️ ベッド</button>
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-amber-50 text-amber-700 hover:bg-amber-100 py-2.5 rounded-xl text-sm font-bold border border-amber-200 transition shadow-sm" data-name="デスク" data-w="1.2" data-h="0.7" data-d="0.6" data-color="#D97706">💻 デスク</button>
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-gray-50 text-gray-700 hover:bg-gray-100 py-2.5 rounded-xl text-sm font-bold border border-gray-200 transition shadow-sm" data-name="チェア" data-w="0.5" data-h="0.9" data-d="0.5" data-color="#4B5563">🪑 チェア</button>
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 py-2.5 rounded-xl text-sm font-bold border border-emerald-200 transition shadow-sm" data-name="ソファ" data-w="1.6" data-h="0.7" data-d="0.8" data-color="#10B981">🛋️ ソファ</button>
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-orange-50 text-orange-700 hover:bg-orange-100 py-2.5 rounded-xl text-sm font-bold border border-orange-200 transition shadow-sm" data-name="収納棚" data-w="0.8" data-h="1.8" data-d="0.3" data-color="#EA580C">🚪 収納棚</button>
+                            <button class="btn-quick-add flex justify-center items-center gap-1 bg-rose-50 text-rose-700 hover:bg-rose-100 py-2.5 rounded-xl text-sm font-bold border border-rose-200 transition shadow-sm" data-name="テーブル" data-w="0.8" data-h="0.7" data-d="0.8" data-color="#E11D48">🍽️ テーブル</button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-100 pt-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-3">サイズを細かく指定して追加</label>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">種類 / 名前</label>
+                                <input type="text" id="furn-name" placeholder="例：テレビ台" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">高さ(H)</label>
+                                <input type="number" id="furn-h" value="0.5" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行(D)</label>
+                                <input type="number" id="furn-d" value="2" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1.5">色</label>
+                            <input type="color" id="furn-color" value="#4F46E5" class="w-full h-12 rounded-xl cursor-pointer border border-gray-300 p-1 bg-gray-50">
+                        </div>
+                        <button id="btn-add-furn" class="w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-2 mt-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                            家具を追加する
                         </button>
-                        <button onclick="window.openDeleteModal('${task.id}')" class="px-5 py-2 bg-red-50 text-red-500 rounded-full font-bold text-sm active:bg-red-100">
+                    </div>
+                </div>
+
+                <!-- Selected Item Controls (Hidden by default) -->
+                <div id="selected-controls" class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 shadow-sm hidden">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        <h3 class="text-sm font-extrabold text-blue-800">選択中の家具</h3>
+                    </div>
+                    <p id="sel-furn-name" class="text-base text-gray-800 mb-4 font-bold bg-white px-3 py-2 rounded-lg border border-blue-100">---</p>
+                    <div class="flex gap-3">
+                        <button id="btn-rot-furn" class="flex-1 bg-white border border-blue-300 text-blue-700 rounded-xl py-2.5 text-sm font-bold shadow-sm hover:bg-blue-50 transition flex justify-center items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            90度回転
+                        </button>
+                        <button id="btn-del-furn" class="flex-1 bg-red-50 border border-red-200 text-red-600 rounded-xl py-2.5 text-sm font-bold shadow-sm hover:bg-red-100 transition flex justify-center items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             削除
                         </button>
                     </div>
-                `;
-                taskListEl.appendChild(el);
-            });
-        }
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // HTMLエスケープ (XSS対策)
-        function escapeHtml(unsafe) {
-            return unsafe
-                 .replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
-        }
+    <!-- Firebase System -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // トースト通知 (自作のアラート代替)
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.remove('translate-y-full', 'opacity-0');
+        // ==========================================
+        // 1. Setup Environment and Firebase Config
+        // ==========================================
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'room-planner-app';
+        let firebaseConfig;
+        
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            // ★ GitHub Pagesで動作させる場合は、ここに自身のFirebase設定を貼り付けてください
+            const firebaseConfig = {
+  apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
+  authDomain: "syokuno.firebaseapp.com",
+  projectId: "syokuno",
+  storageBucket: "syokuno.firebasestorage.app",
+  messagingSenderId: "1018341800237",
+  appId: "1:1018341800237:web:19900243c0859a44713ba4"
+};
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let currentUserId = null;
+        let unsubscribeRoom = null;
+        let unsubscribeItems = null;
+
+        // ==========================================
+        // UI Helpers (Toast instead of Alert)
+        // ==========================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-blue-500';
+            if(type === 'error') bg = 'bg-red-500';
+            if(type === 'success') bg = 'bg-green-500';
+
+            toast.className = `${bg} text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition-all duration-300 transform translate-y-0 opacity-100`;
+            toast.innerText = message;
+            
+            container.appendChild(toast);
             
             setTimeout(() => {
-                toast.classList.add('translate-y-full', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-4', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // イベントリスナーの登録
-        loginBtn.addEventListener('click', handleLogin);
-        logoutBtn.addEventListener('click', handleLogout);
-        formTask.addEventListener('submit', addTask);
-        document.getElementById('btn-save-edit').addEventListener('click', saveEditTask);
-        document.getElementById('btn-confirm-delete').addEventListener('click', confirmDeleteTask);
+        // ==========================================
+        // Auth Logic
+        // ==========================================
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        
+        async function checkEnvironmentAuth() {
+            // AIプラットフォーム内でトークンが提供されている場合は自動ログイン
+            if (typeof __initial_auth_token !== 'undefined') {
+                try {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    return true; // Success
+                } catch (error) {
+                    console.error("Custom token auth failed", error);
+                }
+            }
+            return false;
+        }
 
-        // グローバルスコープへの公開 (インラインonclick用)
-        window.toggleTask = toggleTaskStatus;
-    </script>
-</head>
-<body class="text-gray-800 antialiased selection:bg-blue-200">
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                document.getElementById('ui-username').innerText = user.isAnonymous ? "ゲスト" : (user.displayName || "ユーザー");
+                loginScreen.classList.add('hidden');
+                mainApp.classList.remove('hidden');
+                
+                // Initialize Data and 3D
+                initDataListeners();
+                initThreeJS();
+            } else {
+                loginScreen.classList.remove('hidden');
+                mainApp.classList.add('hidden');
+                cleanup();
+            }
+        });
 
-    <!-- アプリ全体のコンテナ (モバイル向けに幅を制限して中央寄せ) -->
-    <div class="max-w-md mx-auto min-h-screen bg-[#F8FAFC] relative shadow-2xl overflow-hidden flex flex-col">
+        document.getElementById('btn-google-login').addEventListener('click', async () => {
+            try {
+                const provider = new GoogleAuthProvider();
+                await signInWithPopup(auth, provider);
+                showToast("Googleでログインしました", "success");
+            } catch (error) {
+                showToast("ログインに失敗しました: " + error.message, "error");
+            }
+        });
 
-        <!-- トースト通知 -->
-        <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg transition-all duration-300 translate-y-full opacity-0 whitespace-nowrap">
-            メッセージ
-        </div>
+        document.getElementById('btn-guest-login').addEventListener('click', async () => {
+            try {
+                await signInAnonymously(auth);
+                showToast("ゲストとしてログインしました", "success");
+            } catch (error) {
+                showToast("ログインに失敗しました: " + error.message, "error");
+            }
+        });
 
-        <!-- 1. ローディング画面 -->
-        <div id="screen-loading" class="flex-1 flex flex-col items-center justify-center p-6">
-            <svg class="animate-spin h-12 w-12 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p class="text-blue-500 font-bold text-lg animate-pulse">準備中...</p>
-        </div>
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await signOut(auth);
+            showToast("ログアウトしました");
+        });
 
-        <!-- 2. ログイン/スタート画面 -->
-        <div id="screen-login" class="hidden flex-1 flex flex-col p-6 items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-            <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center mb-8 shadow-inner">
-                <span class="text-6xl">🌱</span>
-            </div>
-            <h1 class="text-3xl font-extrabold text-blue-600 mb-2 text-center leading-tight">
-                新生活<br>サポートメモ
-            </h1>
-            <p class="text-gray-500 text-center font-bold mb-12">
-                はじめての一人暮らし。<br>
-                やること、忘れないように記録しよう。
-            </p>
+        // Run automated initial auth if applicable
+        checkEnvironmentAuth();
+
+
+        // ==========================================
+        // State & Firestore Logic
+        // ==========================================
+        const state = {
+            room: { type: 'rect', width: 2.73, depth: 3.64, vertices: [] },
+            items: [] // { id, name, w, h, d, x, y, z, color, rotY }
+        };
+        
+        let uiRoomType = 'rect'; // 現在UIで開いているタブ（'rect' | 'custom'）
+
+        function getRoomDocRef() {
+            // Rule 1: Always use /artifacts/{appId}/users/{userId}/{collectionName}
+            return doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'room');
+        }
+
+        function getItemsCollectionRef() {
+            return collection(db, 'artifacts', appId, 'users', currentUserId, 'furniture');
+        }
+        function getItemDocRef(itemId) {
+            return doc(db, 'artifacts', appId, 'users', currentUserId, 'furniture', itemId);
+        }
+
+        function initDataListeners() {
+            if(!currentUserId) return;
             
-            <div class="w-full space-y-4">
-                <button id="btn-login" class="btn-primary">
-                    はじめる
-                </button>
-            </div>
-        </div>
-
-        <!-- 3. メイン画面 -->
-        <div id="screen-main" class="hidden flex-1 flex flex-col h-screen">
-            
-            <!-- ヘッダー -->
-            <header class="bg-blue-500 text-white p-6 rounded-b-[40px] shadow-md flex-shrink-0 z-10">
-                <div class="flex justify-between items-center mb-4">
-                    <h1 class="text-2xl font-extrabold">マイメモ📝</h1>
-                    <button id="btn-logout" class="text-blue-100 font-bold text-sm bg-blue-600 px-4 py-2 rounded-full active:bg-blue-700 transition-colors">
-                        終了する
-                    </button>
-                </div>
-                <p class="text-blue-50 font-bold text-lg">
-                    今日もお疲れ様です！<br>
-                    自分のペースで進めましょう☕️
-                </p>
-            </header>
-
-            <!-- 入力フォームエリア (スクロールに追従させず上に固定気味にする) -->
-            <div class="px-5 py-4 flex-shrink-0 -mt-6 z-20">
-                <form id="form-task" class="bg-white p-5 rounded-3xl shadow-lg border border-blue-100 flex flex-col gap-4">
-                    <input type="text" id="input-task" required placeholder="例：トイレットペーパーを買う" 
-                           class="input-large bg-blue-50/50" autocomplete="off">
+            // Listen to Room Settings
+            unsubscribeRoom = onSnapshot(getRoomDocRef(), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    state.room = { 
+                        type: data.type || 'rect',
+                        width: data.width || 2.73, 
+                        depth: data.depth || 3.64,
+                        vertices: data.vertices || []
+                    };
                     
-                    <div class="flex gap-3">
-                        <div class="relative flex-1">
-                            <select id="select-category" class="input-large appearance-none bg-blue-50/50 text-gray-700 font-bold">
-                                <option value="shopping">🛒 お買い物</option>
-                                <option value="chore">🧹 家事</option>
-                                <option value="procedure">📝 手続き・支払い</option>
-                                <option value="other">💡 その他</option>
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                <svg class="fill-current h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="w-20 bg-blue-500 text-white rounded-2xl font-bold shadow-md shadow-blue-500/30 active:scale-95 transition-transform flex items-center justify-center">
-                            追加
-                        </button>
-                    </div>
-                </form>
-            </div>
+                    if (state.room.type === 'rect') {
+                        document.getElementById('room-width').value = state.room.width;
+                        document.getElementById('room-depth').value = state.room.depth;
+                        switchRoomType('rect');
+                    } else {
+                        renderVertexUI(state.room.vertices);
+                        switchRoomType('custom');
+                    }
+                    
+                    updateTatamiDisplay();
+                    updateRoomVisuals();
+                } else {
+                    // Initialize default room if not exists
+                    setDoc(getRoomDocRef(), state.room).catch(console.error);
+                }
+            }, (error) => {
+                console.error("Firestore Error (Room):", error);
+                showToast("データの取得に失敗しました", "error");
+            });
 
-            <!-- タスクリストエリア (スクロール領域) -->
-            <div class="flex-1 overflow-y-auto px-5 pb-24 pt-2">
+            // Listen to Furniture Items (Rule 2: Simple query)
+            unsubscribeItems = onSnapshot(getItemsCollectionRef(), (snapshot) => {
+                state.items = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                syncVisualsWithState();
+            }, (error) => {
+                console.error("Firestore Error (Items):", error);
+            });
+        }
+
+        function cleanup() {
+            if(unsubscribeRoom) unsubscribeRoom();
+            if(unsubscribeItems) unsubscribeItems();
+            currentUserId = null;
+            // Clear Three.js meshes
+            Object.values(meshMap).forEach(mesh => scene.remove(mesh));
+            meshMap = {};
+            
+            // Clear Labels
+            Object.values(labelMap).forEach(label => label.remove());
+            labelMap = {};
+        }
+
+        // ==========================================
+        // UI Actions -> Firestore
+        // ==========================================
+        
+        // 多角形の面積計算
+        function getPolygonArea(vertices) {
+            let area = 0;
+            const n = vertices.length;
+            if (n < 3) return 0;
+            for (let i = 0; i < n; i++) {
+                let j = (i + 1) % n;
+                area += vertices[i].x * vertices[j].z;
+                area -= vertices[j].x * vertices[i].z;
+            }
+            return Math.abs(area / 2);
+        }
+
+        // 畳数の計算と表示更新 (1畳 = 約1.62平米)
+        function updateTatamiDisplay() {
+            let area = 0;
+            if (uiRoomType === 'rect') {
+                const w = parseFloat(document.getElementById('room-width').value) || 0;
+                const d = parseFloat(document.getElementById('room-depth').value) || 0;
+                area = w * d;
+            } else {
+                const verts = getVerticesFromUI();
+                area = getPolygonArea(verts);
+            }
+            const tatami = (area / 1.62).toFixed(1);
+            document.getElementById('room-tatami-display').innerText = `約 ${tatami} 畳`;
+        }
+
+        // --- タブと頂点UIの操作 ---
+        const tabRect = document.getElementById('tab-rect');
+        const tabCustom = document.getElementById('tab-custom');
+        const panelRect = document.getElementById('panel-rect');
+        const panelCustom = document.getElementById('panel-custom');
+        const vertexContainer = document.getElementById('vertex-container');
+
+        function switchRoomType(type) {
+            uiRoomType = type;
+            if (type === 'rect') {
+                tabRect.classList.replace('text-gray-500', 'text-blue-600');
+                tabRect.classList.replace('font-medium', 'font-bold');
+                tabRect.classList.replace('border-transparent', 'border-blue-600');
                 
-                <!-- タスクが無いときの表示 -->
-                <div id="empty-state" class="hidden py-16 flex flex-col items-center justify-center text-center opacity-70">
-                    <span class="text-6xl mb-4">🛋️</span>
-                    <h2 class="text-xl font-bold text-gray-600 mb-2">今はやることなし！</h2>
-                    <p class="text-gray-500 font-bold">
-                        ゆっくり休んでくださいね。<br>
-                        思いついたら追加しましょう。
-                    </p>
-                </div>
-
-                <!-- タスクリスト本体 -->
-                <div id="task-list">
-                    <!-- JSでタスクが挿入されます -->
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- 編集モーダル -->
-    <div id="modal-edit" class="hidden fixed inset-0 z-50 bg-blue-900/40 backdrop-blur-sm items-center justify-center p-4">
-        <div class="bg-white rounded-[32px] p-6 w-full max-w-sm shadow-2xl transform transition-all">
-            <h3 class="text-2xl font-extrabold text-blue-600 mb-6 text-center">メモを編集する</h3>
-            
-            <div class="space-y-4 mb-8">
-                <input type="text" id="edit-input-task" class="input-large bg-gray-50" placeholder="内容">
+                tabCustom.classList.replace('text-blue-600', 'text-gray-500');
+                tabCustom.classList.replace('font-bold', 'font-medium');
+                tabCustom.classList.replace('border-blue-600', 'border-transparent');
                 
-                <div class="relative">
-                    <select id="edit-select-category" class="input-large appearance-none bg-gray-50 text-gray-700 font-bold">
-                        <option value="shopping">🛒 お買い物</option>
-                        <option value="chore">🧹 家事</option>
-                        <option value="procedure">📝 手続き・支払い</option>
-                        <option value="other">💡 その他</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                        <svg class="fill-current h-6 w-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="space-y-3">
-                <button id="btn-save-edit" class="btn-primary">保存する</button>
-                <button onclick="window.closeEditModal()" class="btn-secondary text-gray-500 border-gray-200">キャンセル</button>
-            </div>
-        </div>
-    </div>
+                panelRect.classList.remove('hidden');
+                panelCustom.classList.add('hidden');
+            } else {
+                tabCustom.classList.replace('text-gray-500', 'text-blue-600');
+                tabCustom.classList.replace('font-medium', 'font-bold');
+                tabCustom.classList.replace('border-transparent', 'border-blue-600');
+                
+                tabRect.classList.replace('text-blue-600', 'text-gray-500');
+                tabRect.classList.replace('font-bold', 'font-medium');
+                tabRect.classList.replace('border-blue-600', 'border-transparent');
+                
+                panelCustom.classList.remove('hidden');
+                panelRect.classList.add('hidden');
+            }
+            updateTatamiDisplay();
+        }
 
-    <!-- 削除確認モーダル -->
-    <div id="modal-delete" class="hidden fixed inset-0 z-50 bg-blue-900/60 backdrop-blur-sm items-center justify-center p-4">
-        <div class="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl text-center">
-            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span class="text-3xl">🗑️</span>
-            </div>
-            <h3 class="text-2xl font-extrabold text-gray-800 mb-2">本当に削除しますか？</h3>
-            <p class="text-gray-500 font-bold mb-8">この操作は取り消せません。</p>
-            
-            <div class="space-y-3">
-                <button id="btn-confirm-delete" class="btn-danger">はい、削除します</button>
-                <button onclick="window.closeDeleteModal()" class="btn-secondary">もどる</button>
-            </div>
-        </div>
-    </div>
+        tabRect.addEventListener('click', () => switchRoomType('rect'));
+        tabCustom.addEventListener('click', () => {
+            if(vertexContainer.children.length === 0) {
+                // 初回は現在の四角形のサイズから4頂点を作成
+                const w = parseFloat(document.getElementById('room-width').value) || 2.73;
+                const d = parseFloat(document.getElementById('room-depth').value) || 3.64;
+                renderVertexUI([
+                    {x: -w/2, z: -d/2}, {x: w/2, z: -d/2},
+                    {x: w/2, z: d/2}, {x: -w/2, z: d/2}
+                ]);
+            }
+            switchRoomType('custom')
+        });
 
+        function renderVertexUI(vertices) {
+            vertexContainer.innerHTML = '';
+            vertices.forEach((v, i) => addVertexRow(v.x, v.z, i+1));
+            updateTatamiDisplay();
+        }
+
+        function addVertexRow(x, z, index) {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center';
+            row.innerHTML = `
+                <span class="text-sm font-mono text-gray-400 w-5">${index}.</span>
+                <input type="number" value="${Number(x).toFixed(2)}" step="0.1" class="vx w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="X">
+                <input type="number" value="${Number(z).toFixed(2)}" step="0.1" class="vz w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Z">
+                <button class="btn-del-v text-red-500 hover:bg-red-50 p-2 rounded-lg transition border border-transparent hover:border-red-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            row.querySelector('.btn-del-v').addEventListener('click', () => {
+                row.remove();
+                updateTatamiDisplay();
+            });
+            row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateTatamiDisplay));
+            vertexContainer.appendChild(row);
+        }
+
+        function getVerticesFromUI() {
+            const rows = vertexContainer.querySelectorAll('.flex');
+            const verts = [];
+            rows.forEach(row => {
+                const x = parseFloat(row.querySelector('.vx').value) || 0;
+                const z = parseFloat(row.querySelector('.vz').value) || 0;
+                verts.push({x, z});
+            });
+            return verts;
+        }
+
+        document.getElementById('btn-add-vertex').addEventListener('click', () => {
+            const verts = getVerticesFromUI();
+            let lastX = 0, lastZ = 0;
+            if(verts.length > 0) {
+                lastX = verts[verts.length-1].x + 1;
+                lastZ = verts[verts.length-1].z;
+            }
+            addVertexRow(lastX, lastZ, verts.length + 1);
+            updateTatamiDisplay();
+        });
+
+        document.getElementById('btn-preset-l').addEventListener('click', () => {
+            // 一般的なL字型（右下が欠けている形）
+            const lVerts = [
+                {x: -1.5, z: -1.5},
+                {x: 1.5, z: -1.5},
+                {x: 1.5, z: 0},
+                {x: 0, z: 0},
+                {x: 0, z: 1.5},
+                {x: -1.5, z: 1.5}
+            ];
+            renderVertexUI(lVerts);
+        });
+
+        // 手動でサイズ変更した時に畳数表示を更新
+        document.getElementById('room-width').addEventListener('input', updateTatamiDisplay);
+        document.getElementById('room-depth').addEventListener('input', updateTatamiDisplay);
+
+        // プリセット（〇畳）を選択した時の処理
+        document.getElementById('room-preset').addEventListener('change', (e) => {
+            const val = e.target.value;
+            let w = 0, d = 0;
+            
+            // 一般的な中京間/江戸間の寸法をベースに設定
+            if(val === '4.5') { w = 2.73; d = 2.73; }
+            else if(val === '6') { w = 2.73; d = 3.64; }
+            else if(val === '8') { w = 3.64; d = 3.64; }
+            else if(val === '10') { w = 3.64; d = 4.55; }
+            else if(val === '12') { w = 3.64; d = 5.46; }
+            
+            if(w > 0 && d > 0) {
+                document.getElementById('room-width').value = w.toFixed(2);
+                document.getElementById('room-depth').value = d.toFixed(2);
+                updateTatamiDisplay();
+            }
+        });
+
+        document.getElementById('btn-update-room').addEventListener('click', () => {
+            if(!currentUserId) return;
+            
+            let roomData = { type: uiRoomType };
+            if (uiRoomType === 'rect') {
+                roomData.width = parseFloat(document.getElementById('room-width').value) || 2.73;
+                roomData.depth = parseFloat(document.getElementById('room-depth').value) || 3.64;
+            } else {
+                roomData.vertices = getVerticesFromUI();
+                if(roomData.vertices.length < 3) {
+                    showToast("頂点は3つ以上必要です", "error");
+                    return;
+                }
+            }
+
+            setDoc(getRoomDocRef(), roomData)
+                .then(() => showToast("部屋の形を更新しました", "success"))
+                .catch(e => showToast("更新エラー: " + e.message, "error"));
+        });
+
+        document.getElementById('btn-add-furn').addEventListener('click', () => {
+            if(!currentUserId) return;
+            const name = document.getElementById('furn-name').value || "新しい家具";
+            const w = parseFloat(document.getElementById('furn-w').value) || 1;
+            const h = parseFloat(document.getElementById('furn-h').value) || 0.5;
+            const d = parseFloat(document.getElementById('furn-d').value) || 2;
+            const color = document.getElementById('furn-color').value || "#cccccc";
+
+            const newItemRef = doc(getItemsCollectionRef()); // Auto ID
+            const newItem = {
+                name, w, h, d, color,
+                x: 0, y: h/2, z: 0,
+                rotY: 0
+            };
+            
+            setDoc(newItemRef, newItem)
+                .then(() => {
+                    showToast("家具を追加しました", "success");
+                    document.getElementById('furn-name').value = "";
+                })
+                .catch(e => showToast("追加エラー: " + e.message, "error"));
+        });
+
+        // クイック追加ボタンの処理
+        document.querySelectorAll('.btn-quick-add').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if(!currentUserId) {
+                    showToast("操作するにはログインが必要です", "error");
+                    return;
+                }
+                const name = btn.dataset.name;
+                const w = parseFloat(btn.dataset.w);
+                const h = parseFloat(btn.dataset.h);
+                const d = parseFloat(btn.dataset.d);
+                const color = btn.dataset.color;
+
+                const newItemRef = doc(getItemsCollectionRef()); // Auto ID
+                const newItem = {
+                    name, w, h, d, color,
+                    x: 0, y: h/2, z: 0,
+                    rotY: 0
+                };
+                
+                setDoc(newItemRef, newItem)
+                    .then(() => {
+                        showToast(name + " を追加しました", "success");
+                    })
+                    .catch(e => showToast("追加エラー: " + e.message, "error"));
+            });
+        });
+
+        document.getElementById('btn-rot-furn').addEventListener('click', () => {
+            if(!currentUserId || !selectedMeshId) return;
+            const item = state.items.find(i => i.id === selectedMeshId);
+            if(item) {
+                const newRot = (item.rotY + Math.PI/2) % (Math.PI*2);
+                setDoc(getItemDocRef(item.id), { rotY: newRot }, { merge: true });
+            }
+        });
+
+        document.getElementById('btn-del-furn').addEventListener('click', () => {
+            if(!currentUserId || !selectedMeshId) return;
+            deleteDoc(getItemDocRef(selectedMeshId)).then(() => {
+                showToast("削除しました");
+                clearSelection();
+            });
+        });
+
+
+        // ==========================================
+        // 3D Scene Setup (Three.js)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        let scene, camera, renderer;
+        let floor, gridHelper;
+        let meshMap = {}; // id -> THREE.Mesh
+        let labelMap = {}; // id -> HTMLDivElement
+        
+        let raycaster = new THREE.Raycaster();
+        let pointer = new THREE.Vector2();
+        
+        // Interaction state
+        let isDragging = false;
+        let draggedMesh = null;
+        let selectedMeshId = null;
+        let dragOffset = new THREE.Vector3();
+        let intersectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        
+        let viewMode = '3D'; // '3D' or '2D'
+
+        // --- View Mode Toggle Setup ---
+        const btnView3D = document.getElementById('btn-view-3d');
+        const btnView2D = document.getElementById('btn-view-2d');
+
+        btnView3D.addEventListener('click', () => {
+            viewMode = '3D';
+            btnView3D.classList.replace('text-gray-500', 'text-blue-700');
+            btnView3D.classList.remove('hover:bg-gray-50');
+            btnView3D.classList.add('bg-blue-100');
+            
+            btnView2D.classList.replace('text-blue-700', 'text-gray-500');
+            btnView2D.classList.remove('bg-blue-100');
+            btnView2D.classList.add('hover:bg-gray-50');
+            updateCameraPosition();
+        });
+
+        btnView2D.addEventListener('click', () => {
+            viewMode = '2D';
+            btnView2D.classList.replace('text-gray-500', 'text-blue-700');
+            btnView2D.classList.remove('hover:bg-gray-50');
+            btnView2D.classList.add('bg-blue-100');
+            
+            btnView3D.classList.replace('text-blue-700', 'text-gray-500');
+            btnView3D.classList.remove('bg-blue-100');
+            btnView3D.classList.add('hover:bg-gray-50');
+            updateCameraPosition();
+        });
+
+        function initThreeJS() {
+            if(scene) return; // already initialized
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf3f4f6);
+
+            const aspect = container.clientWidth / container.clientHeight;
+            camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
+            // isometric-ish top view
+            camera.position.set(0, 15, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(5, 10, 5);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            // Base Floor (Invisible raycast target for dragging anywhere)
+            const baseGeo = new THREE.PlaneGeometry(100, 100);
+            const baseMat = new THREE.MeshBasicMaterial({ visible: false });
+            const basePlane = new THREE.Mesh(baseGeo, baseMat);
+            basePlane.rotation.x = -Math.PI / 2;
+            scene.add(basePlane);
+
+            // Room Floor Visual
+            updateRoomVisuals();
+
+            // Events
+            window.addEventListener('resize', onWindowResize);
+            
+            // Pointer events for interaction (Touch & Mouse)
+            renderer.domElement.addEventListener('pointerdown', onPointerDown);
+            renderer.domElement.addEventListener('pointermove', onPointerMove);
+            renderer.domElement.addEventListener('pointerup', onPointerUp);
+            renderer.domElement.addEventListener('pointercancel', onPointerUp);
+
+            animate();
+        }
+
+        function updateRoomVisuals() {
+            if(!scene) return;
+            
+            if(floor) scene.remove(floor);
+            if(gridHelper) scene.remove(gridHelper);
+
+            let maxDim = 5;
+            let centerX = 0;
+            let centerZ = 0;
+
+            if (state.room.type === 'rect') {
+                const w = state.room.width;
+                const d = state.room.depth;
+                
+                const geo = new THREE.PlaneGeometry(w, d);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                floor = new THREE.Mesh(geo, mat);
+                floor.rotation.x = -Math.PI / 2;
+                
+                gridHelper = new THREE.GridHelper(Math.max(w, d)*1.5, Math.max(w, d)*1.5, 0x888888, 0xcccccc);
+                gridHelper.position.y = 0.01;
+                
+                maxDim = Math.max(w, d);
+            } else {
+                const verts = state.room.vertices;
+                if(verts && verts.length >= 3) {
+                    const shape = new THREE.Shape();
+                    // Z軸を反転してShapeのY軸として扱い、のちにX軸で-90度回転させる
+                    shape.moveTo(verts[0].x, -verts[0].z);
+                    
+                    let minX = verts[0].x, maxX = verts[0].x;
+                    let minZ = verts[0].z, maxZ = verts[0].z;
+
+                    for(let i=1; i<verts.length; i++) {
+                        shape.lineTo(verts[i].x, -verts[i].z);
+                        minX = Math.min(minX, verts[i].x); 
+                        maxX = Math.max(maxX, verts[i].x);
+                        minZ = Math.min(minZ, verts[i].z); 
+                        maxZ = Math.max(maxZ, verts[i].z);
+                    }
+                    shape.lineTo(verts[0].x, -verts[0].z); // close path
+
+                    const geo = new THREE.ShapeGeometry(shape);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                    floor = new THREE.Mesh(geo, mat);
+                    floor.rotation.x = -Math.PI / 2; 
+                    
+                    const w = maxX - minX;
+                    const d = maxZ - minZ;
+                    maxDim = Math.max(w, d);
+                    
+                    centerX = (minX + maxX) / 2;
+                    centerZ = (minZ + maxZ) / 2;
+                    
+                    gridHelper = new THREE.GridHelper(maxDim * 1.5, maxDim * 1.5, 0x888888, 0xcccccc);
+                    gridHelper.position.set(centerX, 0.01, centerZ);
+                } else {
+                    // Fallback
+                    const geo = new THREE.PlaneGeometry(5, 5);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                    floor = new THREE.Mesh(geo, mat);
+                    floor.rotation.x = -Math.PI / 2;
+                    gridHelper = new THREE.GridHelper(5, 5, 0x888888, 0xcccccc);
+                    gridHelper.position.y = 0.01;
+                }
+            }
+
+            if(floor) {
+                floor.receiveShadow = true;
+                scene.add(floor);
+            }
+            if(gridHelper) {
+                scene.add(gridHelper);
+            }
+            
+            updateCameraPosition();
+        }
+
+        function updateCameraPosition() {
+            if(!camera) return;
+            
+            let maxDim = 5;
+            let centerX = 0;
+            let centerZ = 0;
+
+            if (state.room.type === 'rect') {
+                maxDim = Math.max(state.room.width, state.room.depth);
+            } else {
+                const verts = state.room.vertices;
+                if(verts && verts.length >= 3) {
+                    let minX = verts[0].x, maxX = verts[0].x;
+                    let minZ = verts[0].z, maxZ = verts[0].z;
+                    for(let i=1; i<verts.length; i++) {
+                        minX = Math.min(minX, verts[i].x); maxX = Math.max(maxX, verts[i].x);
+                        minZ = Math.min(minZ, verts[i].z); maxZ = Math.max(maxZ, verts[i].z);
+                    }
+                    maxDim = Math.max(maxX - minX, maxZ - minZ);
+                    centerX = (minX + maxX) / 2;
+                    centerZ = (minZ + maxZ) / 2;
+                }
+            }
+
+            const aspect = container.clientWidth / container.clientHeight;
+            
+            if (viewMode === '3D') {
+                const scaleFactor = aspect < 1 ? 1.2 / aspect : 1.2;
+                const margin = 2.0 * scaleFactor; 
+                camera.position.set(centerX, maxDim * margin, centerZ + maxDim * margin * 0.8);
+                camera.lookAt(centerX, 0, centerZ);
+            } else {
+                // 2D Top View
+                const scaleFactor = aspect < 1 ? 1.0 / aspect : 1.0;
+                camera.position.set(centerX, maxDim * 1.5 * scaleFactor, centerZ);
+                // 上から見下ろす（上方向が-Zになるように調整）
+                camera.up.set(0, 0, -1);
+                camera.lookAt(centerX, 0, centerZ);
+                // 3Dモードに戻る時のためにupをリセット
+                camera.up.set(0, 1, 0); 
+            }
+        }
+
+        function syncVisualsWithState() {
+            if(!scene) return;
+
+            // Remove deleted items
+            const currentIds = new Set(state.items.map(i => i.id));
+            Object.keys(meshMap).forEach(id => {
+                if(!currentIds.has(id)) {
+                    scene.remove(meshMap[id]);
+                    delete meshMap[id];
+                    if(selectedMeshId === id) clearSelection();
+                }
+            });
+
+            // Add or update existing items
+            state.items.forEach(item => {
+                let mesh = meshMap[item.id];
+                if (!mesh) {
+                    // Create new mesh
+                    const geo = new THREE.BoxGeometry(item.w, item.h, item.d);
+                    const mat = new THREE.MeshStandardMaterial({ color: item.color });
+                    mesh = new THREE.Mesh(geo, mat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    // Add outline
+                    const edges = new THREE.EdgesGeometry(geo);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+                    mesh.add(line);
+                    
+                    mesh.userData.id = item.id;
+                    scene.add(mesh);
+                    meshMap[item.id] = mesh;
+                }
+                
+                // If not currently dragging this mesh, update its transform from DB
+                if (draggedMesh !== mesh) {
+                    // Smooth transition would be nice, but direct set is fine for now
+                    mesh.position.set(item.x, item.y, item.z);
+                    mesh.rotation.y = item.rotY || 0;
+                    
+                    // Update material color if changed
+                    if(mesh.material.color.getHexString() !== item.color.replace('#','')) {
+                        mesh.material.color.set(item.color);
+                    }
+                    
+                    // Selection highlight
+                    if(selectedMeshId === item.id) {
+                        mesh.material.emissive.setHex(0x333333);
+                    } else {
+                        mesh.material.emissive.setHex(0x000000);
+                    }
+                }
+            });
+            
+            updateLabels();
+        }
+
+        function updateLabels() {
+            if (!camera || !renderer) return;
+            const labelsContainer = document.getElementById('labels-container');
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            const currentIds = new Set(state.items.map(i => i.id));
+            Object.keys(labelMap).forEach(id => {
+                if(!currentIds.has(id)) {
+                    labelMap[id].remove();
+                    delete labelMap[id];
+                }
+            });
+
+            state.items.forEach(item => {
+                let label = labelMap[item.id];
+                if (!label) {
+                    label = document.createElement('div');
+                    label.className = 'absolute text-[10px] sm:text-xs font-bold text-gray-800 bg-white/90 px-1.5 py-0.5 rounded shadow-sm border border-gray-200 pointer-events-none transform -translate-x-1/2 -translate-y-1/2 whitespace-nowrap z-20';
+                    labelsContainer.appendChild(label);
+                    labelMap[item.id] = label;
+                }
+                
+                label.innerText = item.name;
+
+                const mesh = meshMap[item.id];
+                if (mesh) {
+                    const pos = mesh.position.clone();
+                    // 少し上に浮かせる
+                    pos.y += item.h / 2 + 0.2; 
+                    pos.project(camera);
+
+                    if (pos.z > 1) {
+                        label.style.display = 'none';
+                    } else {
+                        label.style.display = 'block';
+                        label.style.left = (pos.x * widthHalf + widthHalf) + 'px';
+                        label.style.top = (-(pos.y * heightHalf) + heightHalf) + 'px';
+                    }
+                }
+            });
+        }
+
+        // --- Interaction Handlers ---
+        function getPointerIntersect(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+            return raycaster.intersectObjects(Object.values(meshMap));
+        }
+
+        function onPointerDown(event) {
+            const intersects = getPointerIntersect(event);
+            if (intersects.length > 0) {
+                // Pick the first object
+                isDragging = true;
+                draggedMesh = intersects[0].object;
+                selectItem(draggedMesh.userData.id);
+                
+                // Calculate offset for smooth dragging
+                raycaster.ray.intersectPlane(intersectionPlane, dragOffset);
+                dragOffset.sub(draggedMesh.position);
+                
+                // OrbitControls disable equivalent (if we had them)
+                renderer.domElement.style.cursor = 'grabbing';
+            } else {
+                clearSelection();
+            }
+        }
+
+        function onPointerMove(event) {
+            if (!isDragging || !draggedMesh) return;
+            
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+            
+            const point = new THREE.Vector3();
+            raycaster.ray.intersectPlane(intersectionPlane, point);
+            
+            if (point) {
+                // Move mesh, keeping original Y
+                draggedMesh.position.x = point.x - dragOffset.x;
+                draggedMesh.position.z = point.z - dragOffset.z;
+            }
+        }
+
+        function onPointerUp(event) {
+            if (isDragging && draggedMesh) {
+                // Save new position to DB
+                if(currentUserId) {
+                    const id = draggedMesh.userData.id;
+                    const {x, y, z} = draggedMesh.position;
+                    setDoc(getItemDocRef(id), {x, y, z}, {merge: true}).catch(console.error);
+                }
+            }
+            isDragging = false;
+            draggedMesh = null;
+            renderer.domElement.style.cursor = 'auto';
+        }
+
+        function selectItem(id) {
+            selectedMeshId = id;
+            const item = state.items.find(i => i.id === id);
+            
+            if(item) {
+                document.getElementById('selected-controls').classList.remove('hidden');
+                document.getElementById('sel-furn-name').innerText = `${item.name} (${item.w}x${item.h}x${item.d})`;
+            }
+            syncVisualsWithState();
+        }
+
+        function clearSelection() {
+            selectedMeshId = null;
+            document.getElementById('selected-controls').classList.add('hidden');
+            syncVisualsWithState();
+        }
+
+        function onWindowResize() {
+            if(!camera || !renderer) return;
+            const aspect = container.clientWidth / container.clientHeight;
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            updateCameraPosition();
+            updateLabels();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(renderer && scene && camera) {
+                renderer.render(scene, camera);
+                updateLabels();
+            }
+        }
+    </script>
 </body>
 </html>
