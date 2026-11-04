@@ -252,21 +252,12 @@
 
     <!-- Firebase System -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // ==========================================
-        // 1. Setup Environment and Firebase Config
-        // ==========================================
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'room-planner-app';
-        let firebaseConfig;
-        
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } else {
-            // ★ GitHub Pagesで動作させる場合は、ここに自身のFirebase設定を貼り付けてください
-           const firebaseConfig = {
+// ご自身のFirebaseプロジェクト設定
+const firebaseConfig = {
   apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
   authDomain: "syokuno.firebaseapp.com",
   projectId: "syokuno",
@@ -274,11 +265,11 @@
   messagingSenderId: "1018341800237",
   appId: "1:1018341800237:web:19900243c0859a44713ba4"
 };
-        }
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+// initializeAppの中に正しく firebaseConfig をセットして起動
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
         
         let currentUserId = null;
         let unsubscribeRoom = null;
