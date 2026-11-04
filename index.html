@@ -45,10 +45,10 @@
     </div>
 
     <!-- Main App UI -->
-    <div id="main-app" class="flex-1 flex flex-col md:flex-row hidden w-full h-full">
+    <div id="main-app" class="flex-1 flex flex-row hidden w-full h-full relative overflow-hidden">
         <!-- 3D Canvas Area -->
-        <div id="canvas-container" class="flex-1 relative bg-gray-200 shadow-inner order-1 md:order-2 h-[55vh] md:h-full cursor-pointer">
-            <div class="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
+        <div id="canvas-container" class="flex-1 relative bg-gray-200 shadow-inner w-full h-full cursor-pointer">
+            <div class="absolute top-4 left-4 right-4 flex justify-between pointer-events-none z-10">
                 <div class="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-xl text-sm font-bold shadow-md pointer-events-auto text-gray-700">
                     <span id="ui-username">...</span>
                 </div>
@@ -58,25 +58,34 @@
             </div>
             
             <!-- View Mode Toggle -->
-            <div class="absolute top-16 left-4 z-10 pointer-events-auto">
+            <div class="absolute top-16 left-4 z-10 pointer-events-auto flex flex-col gap-2">
                 <div class="bg-white rounded-xl shadow-md p-1 flex gap-1 border border-gray-200">
                     <button id="btn-view-3d" class="px-3 py-1.5 text-sm font-bold rounded-lg bg-blue-100 text-blue-700 transition">3D斜め</button>
                     <button id="btn-view-2d" class="px-3 py-1.5 text-sm font-bold rounded-lg text-gray-500 hover:bg-gray-50 transition">2D真上</button>
                 </div>
+                <div class="bg-white rounded-xl shadow-md p-1 flex border border-gray-200 w-max">
+                    <button id="btn-toggle-grid" class="px-3 py-1.5 text-sm font-bold rounded-lg bg-blue-100 text-blue-700 transition w-full shadow-sm">マス目 ON</button>
+                </div>
             </div>
+
+            <!-- Mobile Panel Toggle Button -->
+            <button id="btn-toggle-panel" class="md:hidden absolute bottom-6 right-4 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm z-20 pointer-events-auto flex items-center gap-2 hover:bg-blue-700 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                家具・設定
+            </button>
 
             <!-- Labels Container -->
             <div id="labels-container" class="absolute inset-0 pointer-events-none overflow-hidden z-20"></div>
-
-            <!-- Instructions Overlay -->
-            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900/75 backdrop-blur-sm text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg pointer-events-none whitespace-nowrap">
-                指やマウスで家具をドラッグして移動
-            </div>
         </div>
 
         <!-- Controls Panel -->
-        <div class="w-full md:w-96 lg:w-[400px] bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 shadow-2xl z-20 flex flex-col order-2 md:order-1 h-[45vh] md:h-full">
-            <div class="p-5 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm z-10">
+        <div id="controls-panel" class="absolute md:relative bottom-0 left-0 w-full md:w-96 lg:w-[400px] bg-gray-50 md:border-l border-gray-200 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] md:shadow-2xl z-30 flex flex-col h-[65vh] md:h-full transition-transform duration-300 translate-y-0 md:translate-y-0 rounded-t-3xl md:rounded-none">
+            <!-- Mobile Close Handle -->
+            <div id="btn-close-panel" class="md:hidden w-full h-8 flex items-center justify-center cursor-pointer pt-2 pb-1 active:bg-gray-100 rounded-t-3xl">
+                <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <div class="px-5 pb-5 pt-2 md:pt-5 bg-white border-b border-gray-200 flex-shrink-0 shadow-sm z-10">
                 <h2 class="text-xl font-extrabold text-gray-800 flex items-center gap-2">
                     <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     部屋 & 家具の設定
@@ -125,14 +134,49 @@
 
                     <!-- Custom Shape Panel -->
                     <div id="panel-custom" class="hidden space-y-4">
-                        <label class="block text-sm font-medium text-gray-600 mb-1.5">頂点座標 (m) - 一筆書きの順で</label>
-                        <div id="vertex-container" class="space-y-2.5 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-xl border border-gray-200">
-                            <!-- 頂点入力が動的に入る -->
+                        <div class="bg-blue-50 text-blue-800 text-xs p-3 rounded-xl border border-blue-200">
+                            💡 下の図の <strong>青い丸（頂点）を指でドラッグ</strong> すると、部屋の形を自由に変更できます。
                         </div>
-                        <div class="flex gap-3">
-                            <button id="btn-preset-l" class="flex-1 bg-white border border-gray-300 text-gray-700 rounded-xl py-2.5 text-sm font-bold hover:bg-gray-50 shadow-sm transition">L字型に設定</button>
-                            <button id="btn-add-vertex" class="flex-1 bg-white border border-gray-300 text-gray-700 rounded-xl py-2.5 text-sm font-bold hover:bg-gray-50 shadow-sm transition">+ 頂点追加</button>
+                        
+                        <!-- SVG Map Editor -->
+                        <div id="shape-editor-container" class="w-full h-56 bg-white border border-gray-300 rounded-xl relative overflow-hidden touch-none shadow-inner">
+                            <svg id="shape-editor-svg" viewBox="-6 -6 12 12" class="w-full h-full touch-none" preserveAspectRatio="xMidYMid meet">
+                                <defs>
+                                    <pattern id="grid" width="1" height="1" patternUnits="userSpaceOnUse">
+                                        <path d="M 1 0 L 0 0 0 1" fill="none" stroke="#e5e7eb" stroke-width="0.05"/>
+                                    </pattern>
+                                    <!-- 中央の基準線 -->
+                                    <pattern id="grid-center" width="12" height="12" patternUnits="userSpaceOnUse">
+                                        <path d="M 6 0 L 6 12 M 0 6 L 12 6" fill="none" stroke="#9ca3af" stroke-width="0.08"/>
+                                    </pattern>
+                                </defs>
+                                <rect x="-6" y="-6" width="12" height="12" fill="url(#grid)" />
+                                <rect x="-6" y="-6" width="12" height="12" fill="url(#grid-center)" />
+                                <polygon id="shape-polygon" points="" fill="rgba(59, 130, 246, 0.2)" stroke="#3b82f6" stroke-width="0.1" stroke-linejoin="round"/>
+                                <g id="shape-circles"></g>
+                            </svg>
                         </div>
+                        
+                        <!-- Presets -->
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="btn-preset-l" class="bg-white border border-gray-300 text-gray-700 rounded-xl py-2 text-xs font-bold hover:bg-gray-50 shadow-sm transition">L字型</button>
+                            <button id="btn-preset-u" class="bg-white border border-gray-300 text-gray-700 rounded-xl py-2 text-xs font-bold hover:bg-gray-50 shadow-sm transition">コの字型</button>
+                            <button id="btn-preset-t" class="bg-white border border-gray-300 text-gray-700 rounded-xl py-2 text-xs font-bold hover:bg-gray-50 shadow-sm transition">T字型</button>
+                        </div>
+
+                        <!-- Manual Coordinate Editor (Collapsible) -->
+                        <details class="bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
+                            <summary class="px-4 py-3 text-sm font-bold text-gray-700 cursor-pointer outline-none hover:bg-gray-100 transition rounded-xl">
+                                ＋ 数値で微調整（高度な設定）
+                            </summary>
+                            <div class="p-3 border-t border-gray-200">
+                                <label class="block text-xs font-medium text-gray-500 mb-2">頂点座標 (m) - 一筆書きの順で</label>
+                                <div id="vertex-container" class="space-y-2.5 max-h-40 overflow-y-auto p-1">
+                                    <!-- 頂点入力が動的に入る -->
+                                </div>
+                                <button id="btn-add-vertex" class="mt-3 w-full bg-white border border-gray-300 text-gray-700 rounded-lg py-2.5 text-sm font-bold hover:bg-gray-50 shadow-sm transition">+ 頂点追加</button>
+                            </div>
+                        </details>
                     </div>
 
                     <button id="btn-update-room" class="mt-5 w-full bg-gray-800 text-white rounded-xl py-3 text-sm font-bold shadow-md hover:bg-gray-700 transition">
@@ -222,7 +266,7 @@
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
             // ★ GitHub Pagesで動作させる場合は、ここに自身のFirebase設定を貼り付けてください
-            const firebaseConfig = {
+                const firebaseConfig = {
   apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
   authDomain: "syokuno.firebaseapp.com",
   projectId: "syokuno",
@@ -230,6 +274,9 @@
   messagingSenderId: "1018341800237",
   appId: "1:1018341800237:web:19900243c0859a44713ba4"
 };
+
+        }
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -259,6 +306,33 @@
                 toast.classList.add('-translate-y-4', 'opacity-0');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        // ==========================================
+        // Mobile Panel Toggle Logic
+        // ==========================================
+        const controlsPanel = document.getElementById('controls-panel');
+        const btnTogglePanel = document.getElementById('btn-toggle-panel');
+        const btnClosePanel = document.getElementById('btn-close-panel');
+        let isPanelOpen = true;
+
+        function setPanelState(open) {
+            isPanelOpen = open;
+            if (isPanelOpen) {
+                controlsPanel.classList.remove('translate-y-full');
+            } else {
+                controlsPanel.classList.add('translate-y-full');
+            }
+            // リサイズを擬似的に発火してCanvasを再描画
+            setTimeout(onWindowResize, 300);
+        }
+
+        btnTogglePanel.addEventListener('click', () => setPanelState(true));
+        btnClosePanel.addEventListener('click', () => setPanelState(false));
+
+        // スマホ画面幅の場合、初期表示はパネルを閉じて3Dを広く見せる
+        if (window.innerWidth < 768) {
+            setPanelState(false);
         }
 
         // ==========================================
@@ -370,7 +444,7 @@
                         switchRoomType('custom');
                     }
                     
-                    updateTatamiDisplay();
+                    onRoomShapeModified();
                     updateRoomVisuals();
                 } else {
                     // Initialize default room if not exists
@@ -423,8 +497,8 @@
             return Math.abs(area / 2);
         }
 
-        // 畳数の計算と表示更新 (1畳 = 約1.62平米)
-        function updateTatamiDisplay() {
+        // 畳数の計算とSVGエディタの更新
+        function onRoomShapeModified() {
             let area = 0;
             if (uiRoomType === 'rect') {
                 const w = parseFloat(document.getElementById('room-width').value) || 0;
@@ -433,6 +507,7 @@
             } else {
                 const verts = getVerticesFromUI();
                 area = getPolygonArea(verts);
+                updateSVGShape(verts);
             }
             const tatami = (area / 1.62).toFixed(1);
             document.getElementById('room-tatami-display').innerText = `約 ${tatami} 畳`;
@@ -470,7 +545,7 @@
                 panelCustom.classList.remove('hidden');
                 panelRect.classList.add('hidden');
             }
-            updateTatamiDisplay();
+            onRoomShapeModified();
         }
 
         tabRect.addEventListener('click', () => switchRoomType('rect'));
@@ -490,7 +565,7 @@
         function renderVertexUI(vertices) {
             vertexContainer.innerHTML = '';
             vertices.forEach((v, i) => addVertexRow(v.x, v.z, i+1));
-            updateTatamiDisplay();
+            onRoomShapeModified();
         }
 
         function addVertexRow(x, z, index) {
@@ -506,9 +581,9 @@
             `;
             row.querySelector('.btn-del-v').addEventListener('click', () => {
                 row.remove();
-                updateTatamiDisplay();
+                onRoomShapeModified();
             });
-            row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', updateTatamiDisplay));
+            row.querySelectorAll('input').forEach(inp => inp.addEventListener('input', onRoomShapeModified));
             vertexContainer.appendChild(row);
         }
 
@@ -531,25 +606,127 @@
                 lastZ = verts[verts.length-1].z;
             }
             addVertexRow(lastX, lastZ, verts.length + 1);
-            updateTatamiDisplay();
+            onRoomShapeModified();
         });
 
         document.getElementById('btn-preset-l').addEventListener('click', () => {
-            // 一般的なL字型（右下が欠けている形）
             const lVerts = [
-                {x: -1.5, z: -1.5},
-                {x: 1.5, z: -1.5},
-                {x: 1.5, z: 0},
+                {x: -2, z: -2},
+                {x: 2, z: -2},
+                {x: 2, z: 0},
                 {x: 0, z: 0},
-                {x: 0, z: 1.5},
-                {x: -1.5, z: 1.5}
+                {x: 0, z: 2},
+                {x: -2, z: 2}
             ];
             renderVertexUI(lVerts);
         });
 
+        document.getElementById('btn-preset-u').addEventListener('click', () => {
+            const uVerts = [
+                {x: -2, z: -2},
+                {x: 2, z: -2},
+                {x: 2, z: 2},
+                {x: 1, z: 2},
+                {x: 1, z: 0},
+                {x: -1, z: 0},
+                {x: -1, z: 2},
+                {x: -2, z: 2}
+            ];
+            renderVertexUI(uVerts);
+        });
+
+        document.getElementById('btn-preset-t').addEventListener('click', () => {
+            const tVerts = [
+                {x: -2, z: -2},
+                {x: 2, z: -2},
+                {x: 2, z: -0.5},
+                {x: 0.5, z: -0.5},
+                {x: 0.5, z: 2},
+                {x: -0.5, z: 2},
+                {x: -0.5, z: -0.5},
+                {x: -2, z: -0.5}
+            ];
+            renderVertexUI(tVerts);
+        });
+
+        // --- SVG Editor Logic ---
+        let activeCircleIndex = -1;
+        let svgIsDragging = false;
+        const svg = document.getElementById('shape-editor-svg');
+
+        function updateSVGShape(vertices) {
+            const polygon = document.getElementById('shape-polygon');
+            const circlesGroup = document.getElementById('shape-circles');
+            if(!polygon || !circlesGroup) return;
+            
+            const pointsStr = vertices.map(v => `${v.x},${v.z}`).join(' ');
+            polygon.setAttribute('points', pointsStr);
+            
+            circlesGroup.innerHTML = '';
+            vertices.forEach((v, i) => {
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', v.x);
+                circle.setAttribute('cy', v.z);
+                circle.setAttribute('r', '0.5'); // タップしやすいサイズ
+                circle.setAttribute('fill', '#2563eb');
+                circle.setAttribute('stroke', '#ffffff');
+                circle.setAttribute('stroke-width', '0.15');
+                circle.setAttribute('class', 'cursor-grab touch-none');
+                circle.style.pointerEvents = 'auto';
+                
+                circle.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    activeCircleIndex = i;
+                    svgIsDragging = true;
+                    circle.setAttribute('class', 'cursor-grabbing touch-none');
+                    svg.setPointerCapture(e.pointerId);
+                });
+                
+                circlesGroup.appendChild(circle);
+            });
+        }
+
+        svg.addEventListener('pointermove', (e) => {
+            if(!svgIsDragging || activeCircleIndex === -1) return;
+            e.preventDefault();
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX;
+            pt.y = e.clientY;
+            const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+            
+            // 0.5m単位でスナップ
+            const snapX = Math.round(svgP.x * 2) / 2;
+            const snapZ = Math.round(svgP.y * 2) / 2;
+            
+            // はみ出し制限
+            const clampX = Math.max(-5.5, Math.min(5.5, snapX));
+            const clampZ = Math.max(-5.5, Math.min(5.5, snapZ));
+            
+            updateVertexInput(activeCircleIndex, clampX, clampZ);
+        });
+
+        svg.addEventListener('pointerup', () => {
+            svgIsDragging = false;
+            activeCircleIndex = -1;
+        });
+        svg.addEventListener('pointercancel', () => {
+            svgIsDragging = false;
+            activeCircleIndex = -1;
+        });
+
+        function updateVertexInput(index, x, z) {
+            const rows = vertexContainer.querySelectorAll('.flex');
+            if(rows[index]) {
+                rows[index].querySelector('.vx').value = x;
+                rows[index].querySelector('.vz').value = z;
+                onRoomShapeModified(); 
+            }
+        }
+
         // 手動でサイズ変更した時に畳数表示を更新
-        document.getElementById('room-width').addEventListener('input', updateTatamiDisplay);
-        document.getElementById('room-depth').addEventListener('input', updateTatamiDisplay);
+        document.getElementById('room-width').addEventListener('input', onRoomShapeModified);
+        document.getElementById('room-depth').addEventListener('input', onRoomShapeModified);
 
         // プリセット（〇畳）を選択した時の処理
         document.getElementById('room-preset').addEventListener('change', (e) => {
@@ -566,7 +743,7 @@
             if(w > 0 && d > 0) {
                 document.getElementById('room-width').value = w.toFixed(2);
                 document.getElementById('room-depth').value = d.toFixed(2);
-                updateTatamiDisplay();
+                onRoomShapeModified();
             }
         });
 
@@ -664,7 +841,7 @@
         // ==========================================
         const container = document.getElementById('canvas-container');
         let scene, camera, renderer;
-        let floor, gridHelper;
+        let floor;
         let meshMap = {}; // id -> THREE.Mesh
         let labelMap = {}; // id -> HTMLDivElement
         
@@ -679,6 +856,7 @@
         let intersectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         
         let viewMode = '3D'; // '3D' or '2D'
+        let isGridVisible = true; // マス目の表示状態
 
         // --- View Mode Toggle Setup ---
         const btnView3D = document.getElementById('btn-view-3d');
@@ -693,6 +871,7 @@
             btnView2D.classList.replace('text-blue-700', 'text-gray-500');
             btnView2D.classList.remove('bg-blue-100');
             btnView2D.classList.add('hover:bg-gray-50');
+            if(camera) { camera.zoom = 1; camera.updateProjectionMatrix(); }
             updateCameraPosition();
         });
 
@@ -705,7 +884,24 @@
             btnView3D.classList.replace('text-blue-700', 'text-gray-500');
             btnView3D.classList.remove('bg-blue-100');
             btnView3D.classList.add('hover:bg-gray-50');
+            if(camera) { camera.zoom = 1; camera.updateProjectionMatrix(); }
             updateCameraPosition();
+        });
+
+        // --- Grid Toggle Setup ---
+        const btnToggleGrid = document.getElementById('btn-toggle-grid');
+        btnToggleGrid.addEventListener('click', () => {
+            isGridVisible = !isGridVisible;
+            if (isGridVisible) {
+                btnToggleGrid.innerText = 'マス目 ON';
+                btnToggleGrid.classList.replace('text-gray-500', 'text-blue-700');
+                btnToggleGrid.classList.replace('bg-gray-50', 'bg-blue-100');
+            } else {
+                btnToggleGrid.innerText = 'マス目 OFF';
+                btnToggleGrid.classList.replace('text-blue-700', 'text-gray-500');
+                btnToggleGrid.classList.replace('bg-blue-100', 'bg-gray-50');
+            }
+            updateRoomVisuals();
         });
 
         function initThreeJS() {
@@ -752,14 +948,42 @@
             renderer.domElement.addEventListener('pointerup', onPointerUp);
             renderer.domElement.addEventListener('pointercancel', onPointerUp);
 
+            // Zoom Events (Mouse Wheel & Pinch Touch)
+            renderer.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
+            renderer.domElement.addEventListener('touchstart', onTouchStartPinch, { passive: false });
+            renderer.domElement.addEventListener('touchmove', onTouchMovePinch, { passive: false });
+            renderer.domElement.addEventListener('touchend', onTouchEndPinch, { passive: false });
+
             animate();
+        }
+
+        function getGridTexture(withGrid) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            // 床のベース色
+            ctx.fillStyle = '#f9fafb'; 
+            ctx.fillRect(0, 0, 128, 128);
+            
+            if (withGrid) {
+                // 1m間隔のグリッド線
+                ctx.strokeStyle = '#d1d5db'; 
+                ctx.lineWidth = 2;
+                ctx.strokeRect(0, 0, 128, 128);
+            }
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
         }
 
         function updateRoomVisuals() {
             if(!scene) return;
             
             if(floor) scene.remove(floor);
-            if(gridHelper) scene.remove(gridHelper);
 
             let maxDim = 5;
             let centerX = 0;
@@ -770,12 +994,20 @@
                 const d = state.room.depth;
                 
                 const geo = new THREE.PlaneGeometry(w, d);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                
+                // 四角形の場合でも、ワールド座標ベースでUVを上書きしてマス目を1mごとに揃える
+                const pos = geo.attributes.position;
+                const uv = geo.attributes.uv;
+                for (let i = 0; i < pos.count; i++) {
+                    uv.setXY(i, pos.getX(i), pos.getY(i));
+                }
+                uv.needsUpdate = true;
+
+                const tex = getGridTexture(isGridVisible);
+
+                const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
                 floor = new THREE.Mesh(geo, mat);
                 floor.rotation.x = -Math.PI / 2;
-                
-                gridHelper = new THREE.GridHelper(Math.max(w, d)*1.5, Math.max(w, d)*1.5, 0x888888, 0xcccccc);
-                gridHelper.position.y = 0.01;
                 
                 maxDim = Math.max(w, d);
             } else {
@@ -798,7 +1030,16 @@
                     shape.lineTo(verts[0].x, -verts[0].z); // close path
 
                     const geo = new THREE.ShapeGeometry(shape);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                    
+                    // 自由な形の場合、1m=1マスになるようにワールド座標ベースでUVを上書き
+                    const pos = geo.attributes.position;
+                    const uv = geo.attributes.uv;
+                    for (let i = 0; i < pos.count; i++) {
+                        uv.setXY(i, pos.getX(i), pos.getY(i));
+                    }
+                    uv.needsUpdate = true;
+
+                    const mat = new THREE.MeshStandardMaterial({ map: getGridTexture(isGridVisible), side: THREE.DoubleSide });
                     floor = new THREE.Mesh(geo, mat);
                     floor.rotation.x = -Math.PI / 2; 
                     
@@ -808,26 +1049,25 @@
                     
                     centerX = (minX + maxX) / 2;
                     centerZ = (minZ + maxZ) / 2;
-                    
-                    gridHelper = new THREE.GridHelper(maxDim * 1.5, maxDim * 1.5, 0x888888, 0xcccccc);
-                    gridHelper.position.set(centerX, 0.01, centerZ);
                 } else {
                     // Fallback
                     const geo = new THREE.PlaneGeometry(5, 5);
-                    const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+                    const pos = geo.attributes.position;
+                    const uv = geo.attributes.uv;
+                    for (let i = 0; i < pos.count; i++) {
+                        uv.setXY(i, pos.getX(i), pos.getY(i));
+                    }
+                    uv.needsUpdate = true;
+                    const tex = getGridTexture(isGridVisible);
+                    const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
                     floor = new THREE.Mesh(geo, mat);
                     floor.rotation.x = -Math.PI / 2;
-                    gridHelper = new THREE.GridHelper(5, 5, 0x888888, 0xcccccc);
-                    gridHelper.position.y = 0.01;
                 }
             }
 
             if(floor) {
                 floor.receiveShadow = true;
                 scene.add(floor);
-            }
-            if(gridHelper) {
-                scene.add(gridHelper);
             }
             
             updateCameraPosition();
@@ -986,6 +1226,8 @@
         }
 
         function onPointerDown(event) {
+            if (!event.isPrimary) return; // マルチタッチ（2本指ズーム等）の時はドラッグを無視
+
             const intersects = getPointerIntersect(event);
             if (intersects.length > 0) {
                 // Pick the first object
@@ -1005,7 +1247,7 @@
         }
 
         function onPointerMove(event) {
-            if (!isDragging || !draggedMesh) return;
+            if (!isDragging || !draggedMesh || !event.isPrimary) return;
             
             const rect = renderer.domElement.getBoundingClientRect();
             pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1034,6 +1276,53 @@
             isDragging = false;
             draggedMesh = null;
             renderer.domElement.style.cursor = 'auto';
+        }
+
+        // --- Zooming Logic ---
+        let initialPinchDistance = null;
+        let initialCameraZoom = 1;
+
+        function onMouseWheel(event) {
+            event.preventDefault();
+            const zoomSpeed = 0.1;
+            if (event.deltaY > 0) {
+                camera.zoom = Math.max(0.2, camera.zoom - zoomSpeed);
+            } else {
+                camera.zoom = Math.min(5.0, camera.zoom + zoomSpeed);
+            }
+            camera.updateProjectionMatrix();
+            updateLabels();
+        }
+
+        function onTouchStartPinch(event) {
+            if (event.touches.length === 2) {
+                isDragging = false; // ズーム開始時は家具のドラッグをキャンセル
+                draggedMesh = null;
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+                initialCameraZoom = camera.zoom;
+            }
+        }
+
+        function onTouchMovePinch(event) {
+            if (event.touches.length === 2 && initialPinchDistance) {
+                event.preventDefault();
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                const scale = distance / initialPinchDistance;
+                camera.zoom = Math.max(0.2, Math.min(initialCameraZoom * scale, 5.0));
+                camera.updateProjectionMatrix();
+                updateLabels();
+            }
+        }
+        
+        function onTouchEndPinch(event) {
+            if (event.touches.length < 2) {
+                initialPinchDistance = null;
+            }
         }
 
         function selectItem(id) {
