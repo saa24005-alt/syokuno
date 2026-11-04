@@ -112,22 +112,22 @@
                             <label class="block text-sm font-medium text-gray-600 mb-1.5">広さの目安（畳）から選ぶ</label>
                             <select id="room-preset" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
                                 <option value="">（カスタムサイズ）</option>
-                                <option value="4.5">4.5畳 (約2.73m × 2.73m)</option>
-                                <option value="6" selected>6畳 (約2.73m × 3.64m)</option>
-                                <option value="8">8畳 (約3.64m × 3.64m)</option>
-                                <option value="10">10畳 (約3.64m × 4.55m)</option>
-                                <option value="12">12畳 (約3.64m × 5.46m)</option>
+                                <option value="4.5">4.5畳 (約273cm × 273cm)</option>
+                                <option value="6" selected>6畳 (約273cm × 364cm)</option>
+                                <option value="8">8畳 (約364cm × 364cm)</option>
+                                <option value="10">10畳 (約364cm × 455cm)</option>
+                                <option value="12">12畳 (約364cm × 546cm)</option>
                             </select>
                         </div>
 
                         <div class="flex gap-4">
                             <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-600 mb-1.5">幅 (X軸・m)</label>
-                                <input type="number" id="room-width" value="2.73" step="0.01" min="1" max="20" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">幅 (X軸・cm)</label>
+                                <input type="number" id="room-width" value="273" step="1" min="10" max="2000" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
                             </div>
                             <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行き (Z軸・m)</label>
-                                <input type="number" id="room-depth" value="3.64" step="0.01" min="1" max="20" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+                                <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行き (Z軸・cm)</label>
+                                <input type="number" id="room-depth" value="364" step="1" min="10" max="2000" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,8 @@
                     <!-- Custom Shape Panel -->
                     <div id="panel-custom" class="hidden space-y-4">
                         <div class="bg-blue-50 text-blue-800 text-xs p-3 rounded-xl border border-blue-200">
-                            💡 下の図の <strong>青い丸（頂点）を指でドラッグ</strong> すると、部屋の形を自由に変更できます。
+                            💡 下の図の <strong>青い丸（頂点）を指でドラッグ</strong> すると、部屋の形を自由に変更できます。<br>
+                            <span class="text-blue-600 mt-1 inline-block">（番号の順番に線が繋がって壁になります）</span>
                         </div>
                         
                         <!-- SVG Map Editor -->
@@ -170,7 +171,7 @@
                                 ＋ 数値で微調整（高度な設定）
                             </summary>
                             <div class="p-3 border-t border-gray-200">
-                                <label class="block text-xs font-medium text-gray-500 mb-2">頂点座標 (m) - 一筆書きの順で</label>
+                                <label class="block text-xs font-medium text-gray-500 mb-2">頂点座標 (cm) - ぐるっと一周する順番で入力</label>
                                 <div id="vertex-container" class="space-y-2.5 max-h-40 overflow-y-auto p-1">
                                     <!-- 頂点入力が動的に入る -->
                                 </div>
@@ -208,16 +209,22 @@
                                 <label class="block text-sm font-medium text-gray-600 mb-1.5">種類 / 名前</label>
                                 <input type="text" id="furn-name" placeholder="例：テレビ台" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
                             </div>
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-600 mb-1.5">高さ(H)</label>
-                                <input type="number" id="furn-h" value="0.5" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行(D)</label>
-                                <input type="number" id="furn-d" value="2" step="0.1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                            <div class="flex gap-4">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1.5">幅(W) cm</label>
+                                    <input type="number" id="furn-w" value="100" step="1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1.5">高さ(H) cm</label>
+                                    <input type="number" id="furn-h" value="50" step="1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-600 mb-1.5">奥行(D) cm</label>
+                                    <input type="number" id="furn-d" value="200" step="1" class="w-full bg-gray-50 border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                                </div>
                             </div>
                         </div>
-                        <div>
+                        <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-600 mb-1.5">色</label>
                             <input type="color" id="furn-color" value="#4F46E5" class="w-full h-12 rounded-xl cursor-pointer border border-gray-300 p-1 bg-gray-50">
                         </div>
@@ -250,25 +257,32 @@
         </div>
     </div>
 
-  <!-- Firebase System -->
+    <!-- Firebase System -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        
-        // ご自身のFirebaseプロジェクト設定
-       const firebaseConfig = {
-  apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
-  authDomain: "syokuno.firebaseapp.com",
-  projectId: "syokuno",
-  storageBucket: "syokuno.firebasestorage.app",
-  messagingSenderId: "1018341800237",
-  appId: "1:1018341800237:web:19900243c0859a44713ba4"
-};
-        // 未定義エラーを防ぐために appId を定義（任意の文字列、または config の appId を使用）
-        const appId = "3d-room-planner-app"; 
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // initializeAppの中に正しく firebaseConfig をセットして起動
+        // ==========================================
+        // 1. Setup Environment and Firebase Config
+        // ==========================================
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'room-planner-app';
+        let firebaseConfig;
+        
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            // ★ GitHub Pagesで動作させる場合は、ここに自身のFirebase設定を貼り付けてください
+            firebaseConfig = {
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_PROJECT_ID.appspot.com",
+                messagingSenderId: "YOUR_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+        }
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -322,7 +336,6 @@
         btnTogglePanel.addEventListener('click', () => setPanelState(true));
         btnClosePanel.addEventListener('click', () => setPanelState(false));
 
-        // スマホ画面幅の場合、初期表示はパネルを閉じて3Dを広く見せる
         if (window.innerWidth < 768) {
             setPanelState(false);
         }
@@ -334,11 +347,10 @@
         const mainApp = document.getElementById('main-app');
         
         async function checkEnvironmentAuth() {
-            // AIプラットフォーム内でトークンが提供されている場合は自動ログイン
             if (typeof __initial_auth_token !== 'undefined') {
                 try {
                     await signInWithCustomToken(auth, __initial_auth_token);
-                    return true; // Success
+                    return true;
                 } catch (error) {
                     console.error("Custom token auth failed", error);
                 }
@@ -353,7 +365,6 @@
                 loginScreen.classList.add('hidden');
                 mainApp.classList.remove('hidden');
                 
-                // Initialize Data and 3D
                 initDataListeners();
                 initThreeJS();
             } else {
@@ -387,7 +398,6 @@
             showToast("ログアウトしました");
         });
 
-        // Run automated initial auth if applicable
         checkEnvironmentAuth();
 
 
@@ -396,13 +406,12 @@
         // ==========================================
         const state = {
             room: { type: 'rect', width: 2.73, depth: 3.64, vertices: [] },
-            items: [] // { id, name, w, h, d, x, y, z, color, rotY }
+            items: [] 
         };
         
-        let uiRoomType = 'rect'; // 現在UIで開いているタブ（'rect' | 'custom'）
+        let uiRoomType = 'rect'; 
 
         function getRoomDocRef() {
-            // Rule 1: Always use /artifacts/{appId}/users/{userId}/{collectionName}
             return doc(db, 'artifacts', appId, 'users', currentUserId, 'settings', 'room');
         }
 
@@ -428,8 +437,9 @@
                     };
                     
                     if (state.room.type === 'rect') {
-                        document.getElementById('room-width').value = state.room.width;
-                        document.getElementById('room-depth').value = state.room.depth;
+                        // 内部のmをcmにしてUIにセット
+                        document.getElementById('room-width').value = Math.round(state.room.width * 100);
+                        document.getElementById('room-depth').value = Math.round(state.room.depth * 100);
                         switchRoomType('rect');
                     } else {
                         renderVertexUI(state.room.vertices);
@@ -439,7 +449,6 @@
                     onRoomShapeModified();
                     updateRoomVisuals();
                 } else {
-                    // Initialize default room if not exists
                     setDoc(getRoomDocRef(), state.room).catch(console.error);
                 }
             }, (error) => {
@@ -447,7 +456,7 @@
                 showToast("データの取得に失敗しました", "error");
             });
 
-            // Listen to Furniture Items (Rule 2: Simple query)
+            // Listen to Furniture Items
             unsubscribeItems = onSnapshot(getItemsCollectionRef(), (snapshot) => {
                 state.items = snapshot.docs.map(doc => ({
                     id: doc.id,
@@ -463,11 +472,8 @@
             if(unsubscribeRoom) unsubscribeRoom();
             if(unsubscribeItems) unsubscribeItems();
             currentUserId = null;
-            // Clear Three.js meshes
             Object.values(meshMap).forEach(mesh => scene.remove(mesh));
             meshMap = {};
-            
-            // Clear Labels
             Object.values(labelMap).forEach(label => label.remove());
             labelMap = {};
         }
@@ -476,7 +482,6 @@
         // UI Actions -> Firestore
         // ==========================================
         
-        // 多角形の面積計算
         function getPolygonArea(vertices) {
             let area = 0;
             const n = vertices.length;
@@ -489,12 +494,12 @@
             return Math.abs(area / 2);
         }
 
-        // 畳数の計算とSVGエディタの更新
         function onRoomShapeModified() {
             let area = 0;
             if (uiRoomType === 'rect') {
-                const w = parseFloat(document.getElementById('room-width').value) || 0;
-                const d = parseFloat(document.getElementById('room-depth').value) || 0;
+                // UI上のcmをmに変換して面積計算
+                const w = (parseFloat(document.getElementById('room-width').value) || 0) / 100;
+                const d = (parseFloat(document.getElementById('room-depth').value) || 0) / 100;
                 area = w * d;
             } else {
                 const verts = getVerticesFromUI();
@@ -505,7 +510,6 @@
             document.getElementById('room-tatami-display').innerText = `約 ${tatami} 畳`;
         }
 
-        // --- タブと頂点UIの操作 ---
         const tabRect = document.getElementById('tab-rect');
         const tabCustom = document.getElementById('tab-custom');
         const panelRect = document.getElementById('panel-rect');
@@ -543,9 +547,9 @@
         tabRect.addEventListener('click', () => switchRoomType('rect'));
         tabCustom.addEventListener('click', () => {
             if(vertexContainer.children.length === 0) {
-                // 初回は現在の四角形のサイズから4頂点を作成
-                const w = parseFloat(document.getElementById('room-width').value) || 2.73;
-                const d = parseFloat(document.getElementById('room-depth').value) || 3.64;
+                // 初回は現在の四角形のサイズ(UIのcmベース)から4頂点(mベース)を作成
+                const w = (parseFloat(document.getElementById('room-width').value) || 273) / 100;
+                const d = (parseFloat(document.getElementById('room-depth').value) || 364) / 100;
                 renderVertexUI([
                     {x: -w/2, z: -d/2}, {x: w/2, z: -d/2},
                     {x: w/2, z: d/2}, {x: -w/2, z: d/2}
@@ -554,19 +558,21 @@
             switchRoomType('custom')
         });
 
+        // 内部データ(m)を受け取ってUI(cm)を作る
         function renderVertexUI(vertices) {
             vertexContainer.innerHTML = '';
             vertices.forEach((v, i) => addVertexRow(v.x, v.z, i+1));
             onRoomShapeModified();
         }
 
+        // x, z は m 単位
         function addVertexRow(x, z, index) {
             const row = document.createElement('div');
             row.className = 'flex gap-2 items-center';
             row.innerHTML = `
                 <span class="text-sm font-mono text-gray-400 w-5">${index}.</span>
-                <input type="number" value="${Number(x).toFixed(2)}" step="0.1" class="vx w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="X">
-                <input type="number" value="${Number(z).toFixed(2)}" step="0.1" class="vz w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Z">
+                <input type="number" value="${Math.round(x * 100)}" step="1" class="vx w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="X (cm)">
+                <input type="number" value="${Math.round(z * 100)}" step="1" class="vz w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Z (cm)">
                 <button class="btn-del-v text-red-500 hover:bg-red-50 p-2 rounded-lg transition border border-transparent hover:border-red-200">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
@@ -579,12 +585,13 @@
             vertexContainer.appendChild(row);
         }
 
+        // UI上の cm を読み取って m に戻す
         function getVerticesFromUI() {
             const rows = vertexContainer.querySelectorAll('.flex');
             const verts = [];
             rows.forEach(row => {
-                const x = parseFloat(row.querySelector('.vx').value) || 0;
-                const z = parseFloat(row.querySelector('.vz').value) || 0;
+                const x = (parseFloat(row.querySelector('.vx').value) || 0) / 100;
+                const z = (parseFloat(row.querySelector('.vz').value) || 0) / 100;
                 verts.push({x, z});
             });
             return verts;
@@ -594,51 +601,22 @@
             const verts = getVerticesFromUI();
             let lastX = 0, lastZ = 0;
             if(verts.length > 0) {
-                lastX = verts[verts.length-1].x + 1;
+                lastX = verts[verts.length-1].x + 1; // 1m(100cm)ずらす
                 lastZ = verts[verts.length-1].z;
             }
             addVertexRow(lastX, lastZ, verts.length + 1);
             onRoomShapeModified();
         });
 
+        // プリセットデータ(m単位)
         document.getElementById('btn-preset-l').addEventListener('click', () => {
-            const lVerts = [
-                {x: -2, z: -2},
-                {x: 2, z: -2},
-                {x: 2, z: 0},
-                {x: 0, z: 0},
-                {x: 0, z: 2},
-                {x: -2, z: 2}
-            ];
-            renderVertexUI(lVerts);
+            renderVertexUI([{x: -2, z: -2}, {x: 2, z: -2}, {x: 2, z: 0}, {x: 0, z: 0}, {x: 0, z: 2}, {x: -2, z: 2}]);
         });
-
         document.getElementById('btn-preset-u').addEventListener('click', () => {
-            const uVerts = [
-                {x: -2, z: -2},
-                {x: 2, z: -2},
-                {x: 2, z: 2},
-                {x: 1, z: 2},
-                {x: 1, z: 0},
-                {x: -1, z: 0},
-                {x: -1, z: 2},
-                {x: -2, z: 2}
-            ];
-            renderVertexUI(uVerts);
+            renderVertexUI([{x: -2, z: -2}, {x: 2, z: -2}, {x: 2, z: 2}, {x: 1, z: 2}, {x: 1, z: 0}, {x: -1, z: 0}, {x: -1, z: 2}, {x: -2, z: 2}]);
         });
-
         document.getElementById('btn-preset-t').addEventListener('click', () => {
-            const tVerts = [
-                {x: -2, z: -2},
-                {x: 2, z: -2},
-                {x: 2, z: -0.5},
-                {x: 0.5, z: -0.5},
-                {x: 0.5, z: 2},
-                {x: -0.5, z: 2},
-                {x: -0.5, z: -0.5},
-                {x: -2, z: -0.5}
-            ];
-            renderVertexUI(tVerts);
+            renderVertexUI([{x: -2, z: -2}, {x: 2, z: -2}, {x: 2, z: -0.5}, {x: 0.5, z: -0.5}, {x: 0.5, z: 2}, {x: -0.5, z: 2}, {x: -0.5, z: -0.5}, {x: -2, z: -0.5}]);
         });
 
         // --- SVG Editor Logic ---
@@ -656,10 +634,12 @@
             
             circlesGroup.innerHTML = '';
             vertices.forEach((v, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', v.x);
                 circle.setAttribute('cy', v.z);
-                circle.setAttribute('r', '0.5'); // タップしやすいサイズ
+                circle.setAttribute('r', '0.5'); 
                 circle.setAttribute('fill', '#2563eb');
                 circle.setAttribute('stroke', '#ffffff');
                 circle.setAttribute('stroke-width', '0.15');
@@ -675,7 +655,20 @@
                     svg.setPointerCapture(e.pointerId);
                 });
                 
-                circlesGroup.appendChild(circle);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', v.x);
+                text.setAttribute('y', v.z);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('dominant-baseline', 'central');
+                text.setAttribute('fill', '#ffffff');
+                text.setAttribute('font-size', '0.45');
+                text.setAttribute('font-weight', 'bold');
+                text.setAttribute('class', 'pointer-events-none');
+                text.textContent = i + 1;
+                
+                g.appendChild(circle);
+                g.appendChild(text);
+                circlesGroup.appendChild(g);
             });
         }
 
@@ -687,11 +680,10 @@
             pt.y = e.clientY;
             const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
             
-            // 0.5m単位でスナップ
+            // 0.5m(50cm)単位でスナップ
             const snapX = Math.round(svgP.x * 2) / 2;
             const snapZ = Math.round(svgP.y * 2) / 2;
             
-            // はみ出し制限
             const clampX = Math.max(-5.5, Math.min(5.5, snapX));
             const clampZ = Math.max(-5.5, Math.min(5.5, snapZ));
             
@@ -710,13 +702,13 @@
         function updateVertexInput(index, x, z) {
             const rows = vertexContainer.querySelectorAll('.flex');
             if(rows[index]) {
-                rows[index].querySelector('.vx').value = x;
-                rows[index].querySelector('.vz').value = z;
+                // UI上はcmで表示
+                rows[index].querySelector('.vx').value = Math.round(x * 100);
+                rows[index].querySelector('.vz').value = Math.round(z * 100);
                 onRoomShapeModified(); 
             }
         }
 
-        // 手動でサイズ変更した時に畳数表示を更新
         document.getElementById('room-width').addEventListener('input', onRoomShapeModified);
         document.getElementById('room-depth').addEventListener('input', onRoomShapeModified);
 
@@ -725,7 +717,6 @@
             const val = e.target.value;
             let w = 0, d = 0;
             
-            // 一般的な中京間/江戸間の寸法をベースに設定
             if(val === '4.5') { w = 2.73; d = 2.73; }
             else if(val === '6') { w = 2.73; d = 3.64; }
             else if(val === '8') { w = 3.64; d = 3.64; }
@@ -733,8 +724,9 @@
             else if(val === '12') { w = 3.64; d = 5.46; }
             
             if(w > 0 && d > 0) {
-                document.getElementById('room-width').value = w.toFixed(2);
-                document.getElementById('room-depth').value = d.toFixed(2);
+                // UIにセットする時はcmにする
+                document.getElementById('room-width').value = Math.round(w * 100);
+                document.getElementById('room-depth').value = Math.round(d * 100);
                 onRoomShapeModified();
             }
         });
@@ -744,8 +736,9 @@
             
             let roomData = { type: uiRoomType };
             if (uiRoomType === 'rect') {
-                roomData.width = parseFloat(document.getElementById('room-width').value) || 2.73;
-                roomData.depth = parseFloat(document.getElementById('room-depth').value) || 3.64;
+                // データベース保存時はmに戻す
+                roomData.width = (parseFloat(document.getElementById('room-width').value) || 273) / 100;
+                roomData.depth = (parseFloat(document.getElementById('room-depth').value) || 364) / 100;
             } else {
                 roomData.vertices = getVerticesFromUI();
                 if(roomData.vertices.length < 3) {
@@ -762,9 +755,10 @@
         document.getElementById('btn-add-furn').addEventListener('click', () => {
             if(!currentUserId) return;
             const name = document.getElementById('furn-name').value || "新しい家具";
-            const w = parseFloat(document.getElementById('furn-w').value) || 1;
-            const h = parseFloat(document.getElementById('furn-h').value) || 0.5;
-            const d = parseFloat(document.getElementById('furn-d').value) || 2;
+            // 入力されたcmをmに変換
+            const w = (parseFloat(document.getElementById('furn-w').value) || 100) / 100;
+            const h = (parseFloat(document.getElementById('furn-h').value) || 50) / 100;
+            const d = (parseFloat(document.getElementById('furn-d').value) || 200) / 100;
             const color = document.getElementById('furn-color').value || "#cccccc";
 
             const newItemRef = doc(getItemsCollectionRef()); // Auto ID
@@ -782,7 +776,6 @@
                 .catch(e => showToast("追加エラー: " + e.message, "error"));
         });
 
-        // クイック追加ボタンの処理
         document.querySelectorAll('.btn-quick-add').forEach(btn => {
             btn.addEventListener('click', () => {
                 if(!currentUserId) {
@@ -795,7 +788,7 @@
                 const d = parseFloat(btn.dataset.d);
                 const color = btn.dataset.color;
 
-                const newItemRef = doc(getItemsCollectionRef()); // Auto ID
+                const newItemRef = doc(getItemsCollectionRef());
                 const newItem = {
                     name, w, h, d, color,
                     x: 0, y: h/2, z: 0,
@@ -834,23 +827,21 @@
         const container = document.getElementById('canvas-container');
         let scene, camera, renderer;
         let floor;
-        let meshMap = {}; // id -> THREE.Mesh
-        let labelMap = {}; // id -> HTMLDivElement
+        let meshMap = {}; 
+        let labelMap = {}; 
         
         let raycaster = new THREE.Raycaster();
         let pointer = new THREE.Vector2();
         
-        // Interaction state
         let isDragging = false;
         let draggedMesh = null;
         let selectedMeshId = null;
         let dragOffset = new THREE.Vector3();
         let intersectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
         
-        let viewMode = '3D'; // '3D' or '2D'
-        let isGridVisible = true; // マス目の表示状態
+        let viewMode = '3D'; 
+        let isGridVisible = true; 
 
-        // --- View Mode Toggle Setup ---
         const btnView3D = document.getElementById('btn-view-3d');
         const btnView2D = document.getElementById('btn-view-2d');
 
@@ -880,7 +871,6 @@
             updateCameraPosition();
         });
 
-        // --- Grid Toggle Setup ---
         const btnToggleGrid = document.getElementById('btn-toggle-grid');
         btnToggleGrid.addEventListener('click', () => {
             isGridVisible = !isGridVisible;
@@ -897,14 +887,13 @@
         });
 
         function initThreeJS() {
-            if(scene) return; // already initialized
+            if(scene) return; 
             
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xf3f4f6);
 
             const aspect = container.clientWidth / container.clientHeight;
             camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 1000);
-            // isometric-ish top view
             camera.position.set(0, 15, 10);
             camera.lookAt(0, 0, 0);
 
@@ -913,7 +902,6 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // Lighting
             const ambient = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambient);
             const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -921,26 +909,21 @@
             dirLight.castShadow = true;
             scene.add(dirLight);
 
-            // Base Floor (Invisible raycast target for dragging anywhere)
             const baseGeo = new THREE.PlaneGeometry(100, 100);
             const baseMat = new THREE.MeshBasicMaterial({ visible: false });
             const basePlane = new THREE.Mesh(baseGeo, baseMat);
             basePlane.rotation.x = -Math.PI / 2;
             scene.add(basePlane);
 
-            // Room Floor Visual
             updateRoomVisuals();
 
-            // Events
             window.addEventListener('resize', onWindowResize);
             
-            // Pointer events for interaction (Touch & Mouse)
             renderer.domElement.addEventListener('pointerdown', onPointerDown);
             renderer.domElement.addEventListener('pointermove', onPointerMove);
             renderer.domElement.addEventListener('pointerup', onPointerUp);
             renderer.domElement.addEventListener('pointercancel', onPointerUp);
 
-            // Zoom Events (Mouse Wheel & Pinch Touch)
             renderer.domElement.addEventListener('wheel', onMouseWheel, { passive: false });
             renderer.domElement.addEventListener('touchstart', onTouchStartPinch, { passive: false });
             renderer.domElement.addEventListener('touchmove', onTouchMovePinch, { passive: false });
@@ -955,12 +938,10 @@
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
             
-            // 床のベース色
             ctx.fillStyle = '#f9fafb'; 
             ctx.fillRect(0, 0, 128, 128);
             
             if (withGrid) {
-                // 1m間隔のグリッド線
                 ctx.strokeStyle = '#d1d5db'; 
                 ctx.lineWidth = 2;
                 ctx.strokeRect(0, 0, 128, 128);
@@ -987,7 +968,6 @@
                 
                 const geo = new THREE.PlaneGeometry(w, d);
                 
-                // 四角形の場合でも、ワールド座標ベースでUVを上書きしてマス目を1mごとに揃える
                 const pos = geo.attributes.position;
                 const uv = geo.attributes.uv;
                 for (let i = 0; i < pos.count; i++) {
@@ -1006,7 +986,6 @@
                 const verts = state.room.vertices;
                 if(verts && verts.length >= 3) {
                     const shape = new THREE.Shape();
-                    // Z軸を反転してShapeのY軸として扱い、のちにX軸で-90度回転させる
                     shape.moveTo(verts[0].x, -verts[0].z);
                     
                     let minX = verts[0].x, maxX = verts[0].x;
@@ -1019,11 +998,10 @@
                         minZ = Math.min(minZ, verts[i].z); 
                         maxZ = Math.max(maxZ, verts[i].z);
                     }
-                    shape.lineTo(verts[0].x, -verts[0].z); // close path
+                    shape.lineTo(verts[0].x, -verts[0].z); 
 
                     const geo = new THREE.ShapeGeometry(shape);
                     
-                    // 自由な形の場合、1m=1マスになるようにワールド座標ベースでUVを上書き
                     const pos = geo.attributes.position;
                     const uv = geo.attributes.uv;
                     for (let i = 0; i < pos.count; i++) {
@@ -1042,7 +1020,6 @@
                     centerX = (minX + maxX) / 2;
                     centerZ = (minZ + maxZ) / 2;
                 } else {
-                    // Fallback
                     const geo = new THREE.PlaneGeometry(5, 5);
                     const pos = geo.attributes.position;
                     const uv = geo.attributes.uv;
@@ -1097,13 +1074,10 @@
                 camera.position.set(centerX, maxDim * margin, centerZ + maxDim * margin * 0.8);
                 camera.lookAt(centerX, 0, centerZ);
             } else {
-                // 2D Top View
                 const scaleFactor = aspect < 1 ? 1.0 / aspect : 1.0;
                 camera.position.set(centerX, maxDim * 1.5 * scaleFactor, centerZ);
-                // 上から見下ろす（上方向が-Zになるように調整）
                 camera.up.set(0, 0, -1);
                 camera.lookAt(centerX, 0, centerZ);
-                // 3Dモードに戻る時のためにupをリセット
                 camera.up.set(0, 1, 0); 
             }
         }
@@ -1111,7 +1085,6 @@
         function syncVisualsWithState() {
             if(!scene) return;
 
-            // Remove deleted items
             const currentIds = new Set(state.items.map(i => i.id));
             Object.keys(meshMap).forEach(id => {
                 if(!currentIds.has(id)) {
@@ -1121,18 +1094,15 @@
                 }
             });
 
-            // Add or update existing items
             state.items.forEach(item => {
                 let mesh = meshMap[item.id];
                 if (!mesh) {
-                    // Create new mesh
                     const geo = new THREE.BoxGeometry(item.w, item.h, item.d);
                     const mat = new THREE.MeshStandardMaterial({ color: item.color });
                     mesh = new THREE.Mesh(geo, mat);
                     mesh.castShadow = true;
                     mesh.receiveShadow = true;
                     
-                    // Add outline
                     const edges = new THREE.EdgesGeometry(geo);
                     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
                     mesh.add(line);
@@ -1142,18 +1112,14 @@
                     meshMap[item.id] = mesh;
                 }
                 
-                // If not currently dragging this mesh, update its transform from DB
                 if (draggedMesh !== mesh) {
-                    // Smooth transition would be nice, but direct set is fine for now
                     mesh.position.set(item.x, item.y, item.z);
                     mesh.rotation.y = item.rotY || 0;
                     
-                    // Update material color if changed
                     if(mesh.material.color.getHexString() !== item.color.replace('#','')) {
                         mesh.material.color.set(item.color);
                     }
                     
-                    // Selection highlight
                     if(selectedMeshId === item.id) {
                         mesh.material.emissive.setHex(0x333333);
                     } else {
@@ -1193,7 +1159,6 @@
                 const mesh = meshMap[item.id];
                 if (mesh) {
                     const pos = mesh.position.clone();
-                    // 少し上に浮かせる
                     pos.y += item.h / 2 + 0.2; 
                     pos.project(camera);
 
@@ -1208,7 +1173,6 @@
             });
         }
 
-        // --- Interaction Handlers ---
         function getPointerIntersect(event) {
             const rect = renderer.domElement.getBoundingClientRect();
             pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1218,20 +1182,17 @@
         }
 
         function onPointerDown(event) {
-            if (!event.isPrimary) return; // マルチタッチ（2本指ズーム等）の時はドラッグを無視
+            if (!event.isPrimary) return; 
 
             const intersects = getPointerIntersect(event);
             if (intersects.length > 0) {
-                // Pick the first object
                 isDragging = true;
                 draggedMesh = intersects[0].object;
                 selectItem(draggedMesh.userData.id);
                 
-                // Calculate offset for smooth dragging
                 raycaster.ray.intersectPlane(intersectionPlane, dragOffset);
                 dragOffset.sub(draggedMesh.position);
                 
-                // OrbitControls disable equivalent (if we had them)
                 renderer.domElement.style.cursor = 'grabbing';
             } else {
                 clearSelection();
@@ -1250,7 +1211,6 @@
             raycaster.ray.intersectPlane(intersectionPlane, point);
             
             if (point) {
-                // Move mesh, keeping original Y
                 draggedMesh.position.x = point.x - dragOffset.x;
                 draggedMesh.position.z = point.z - dragOffset.z;
             }
@@ -1258,7 +1218,6 @@
 
         function onPointerUp(event) {
             if (isDragging && draggedMesh) {
-                // Save new position to DB
                 if(currentUserId) {
                     const id = draggedMesh.userData.id;
                     const {x, y, z} = draggedMesh.position;
@@ -1270,7 +1229,6 @@
             renderer.domElement.style.cursor = 'auto';
         }
 
-        // --- Zooming Logic ---
         let initialPinchDistance = null;
         let initialCameraZoom = 1;
 
@@ -1288,7 +1246,7 @@
 
         function onTouchStartPinch(event) {
             if (event.touches.length === 2) {
-                isDragging = false; // ズーム開始時は家具のドラッグをキャンセル
+                isDragging = false; 
                 draggedMesh = null;
                 const dx = event.touches[0].clientX - event.touches[1].clientX;
                 const dy = event.touches[0].clientY - event.touches[1].clientY;
@@ -1323,7 +1281,11 @@
             
             if(item) {
                 document.getElementById('selected-controls').classList.remove('hidden');
-                document.getElementById('sel-furn-name').innerText = `${item.name} (${item.w}x${item.h}x${item.d})`;
+                // UI上は分かりやすくcmで表示
+                const w_cm = Math.round(item.w * 100);
+                const h_cm = Math.round(item.h * 100);
+                const d_cm = Math.round(item.d * 100);
+                document.getElementById('sel-furn-name').innerText = `${item.name} (${w_cm}x${h_cm}x${d_cm}cm)`;
             }
             syncVisualsWithState();
         }
