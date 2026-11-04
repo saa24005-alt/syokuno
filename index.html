@@ -273,16 +273,14 @@
             firebaseConfig = JSON.parse(__firebase_config);
         } else {
             // ★ GitHub Pagesで動作させる場合は、ここに自身のFirebase設定を貼り付けてください
-            firebaseConfig = {
-                apiKey: "YOUR_API_KEY",
-                authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-                projectId: "YOUR_PROJECT_ID",
-                storageBucket: "YOUR_PROJECT_ID.appspot.com",
-                messagingSenderId: "YOUR_SENDER_ID",
-                appId: "YOUR_APP_ID"
-            };
-        }
-
+            const firebaseConfig = {
+  apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
+  authDomain: "syokuno.firebaseapp.com",
+  projectId: "syokuno",
+  storageBucket: "syokuno.firebasestorage.app",
+  messagingSenderId: "1018341800237",
+  appId: "1:1018341800237:web:19900243c0859a44713ba4"
+};
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
