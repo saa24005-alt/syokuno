@@ -250,13 +250,14 @@
         </div>
     </div>
 
-    <!-- Firebase System -->
+  <!-- Firebase System -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-　　　　import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-// ご自身のFirebaseプロジェクト設定
-const firebaseConfig = {
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        
+        // ご自身のFirebaseプロジェクト設定
+       const firebaseConfig = {
   apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
   authDomain: "syokuno.firebaseapp.com",
   projectId: "syokuno",
@@ -264,11 +265,13 @@ const firebaseConfig = {
   messagingSenderId: "1018341800237",
   appId: "1:1018341800237:web:19900243c0859a44713ba4"
 };
+        // 未定義エラーを防ぐために appId を定義（任意の文字列、または config の appId を使用）
+        const appId = "3d-room-planner-app"; 
 
-// initializeAppの中に正しく firebaseConfig をセットして起動
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+        // initializeAppの中に正しく firebaseConfig をセットして起動
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
         let currentUserId = null;
         let unsubscribeRoom = null;
