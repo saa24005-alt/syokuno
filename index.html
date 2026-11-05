@@ -700,7 +700,12 @@
             if(!scene) return;
             if(roomMesh) { scene.remove(roomMesh); roomMesh = null; }
 
-            const material = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+           const material = new THREE.MeshLambertMaterial({ 
+    color: 0xaaddff,       // 好きな色（16進数）に変更。0xの後にカラーコードを書きます
+    side: THREE.DoubleSide,
+    transparent: true,     // 透明度を有効にする
+    opacity: 0.7           // 濃さ（1.0で完全に不透明、0.0で完全な透明）
+});
             let geometry;
 
             if(state.room.type === 'rect') {
