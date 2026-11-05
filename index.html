@@ -263,7 +263,7 @@
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// 1. 必ず先に config を定義する
+// 1. Firebaseの初期化
 const firebaseConfig = {
   apiKey: "AIzaSyD70dhKVFF7nz1J-1w4XuTovMKzZYSdhlc",
   authDomain: "syokuno.firebaseapp.com",
@@ -273,11 +273,18 @@ const firebaseConfig = {
   appId: "1:1018341800237:web:19900243c0859a44713ba4"
 };
 
-// 2. 定義した firebaseConfig を initializeApp のカッコの中に入れて呼び出す
-const app = initializeApp(firebaseConfig); 
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-        
+
+// 2. ★ここに appId を定義する（function の中ではなく、外に書くのが重要です）
+const appId = "3d-room-planner-app";
+
+// --- これ以降に getRoomDocRef などの関数が続く ---
+function getRoomDocRef(roomId) {
+  // これで appId を見つけられるようになり、エラーが消えます
+  // return doc(db, "apps", appId, "rooms", roomId); 
+}
         let currentUserId = null;
         let unsubscribeRoom = null;
         let unsubscribeItems = null;
